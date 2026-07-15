@@ -1,0 +1,2 @@
+# CampusOS
+CampusOS - collaborative project
