@@ -7,7 +7,7 @@
  * 【新增功能时】不用改这里；你功能自己的 DTO 类型写在 api/你的功能.ts 里。
  */
 
-/** 统一返回结构（对应 Result.java）。code=200 成功，其余失败，msg 为提示语。 */
+/** 统一返回结构（对应 Result.java）。code=0 成功（见后端 ResultCode），其余失败，msg 为提示语。 */
 export interface Result<T = unknown> {
   code: number
   msg: string

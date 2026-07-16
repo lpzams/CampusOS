@@ -14,6 +14,10 @@
 -- 已有环境的同学执行 docker compose down -v && docker compose up -d 重建即可同步。
 -- ============================================================
 
+-- 声明本文件内容是 utf8mb4 编码：Docker 容器首次自动执行时 mysql 客户端
+-- 默认按 latin1 读，不写这句中文会存成乱码。每个 SQL 脚本开头都要带。
+SET NAMES utf8mb4;
+
 CREATE DATABASE IF NOT EXISTS campus_os
   DEFAULT CHARACTER SET utf8mb4
   COLLATE utf8mb4_general_ci;

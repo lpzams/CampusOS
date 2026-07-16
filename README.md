@@ -26,21 +26,38 @@
 
 ## 快速开始
 
-> 前置：JDK 17+、Maven 3.8+、Node 18+、MySQL 8、微信开发者工具（跑小程序才需要）。
+> 前置：装好 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
+> 用「开发模式」另需 JDK 17+、Maven 3.8+、Node 18+；跑小程序需 HBuilderX + 微信开发者工具。
+
+### 方式一：Docker 一键跑全套（汇报演示 / 快速体验）
 
 ```bash
-# 1. 一键启动统一数据库环境（MySQL 8 + Redis，需先装 Docker Desktop）
-#    首次启动会自动执行 docs/sql/ 全部脚本：建库 campus_os + 新闻表 + 示例数据
-docker compose up -d
-#    常用：down 停止 / down -v 清空重建 / logs campus-mysql 看日志（详见 docker-compose.yml 头部注释）
-#    没装 Docker 的同学也可用本机 MySQL 手动导入：mysql -uroot -p < docs/sql/001_init.sql
+docker compose up -d --build
+```
 
-# 2. 启动后端（默认 8080；数据库账号密码在 backend/campus-api/src/main/resources/application.yml）
+首次会拉镜像+下载依赖（几分钟），完成后：
+
+| 访问 | 地址 |
+| --- | --- |
+| 网站 | http://localhost:8081 |
+| 后端接口 | http://localhost:8080/api/news |
+| MySQL / Redis | localhost:3306（root/root）/ localhost:6379 |
+
+数据库首次启动自动执行 `docs/sql/` 全部脚本（建库建表 + 示例数据）。
+改了代码想更新容器：还是这一条命令。更多命令见 `docker-compose.yml` 头部注释。
+
+### 方式二：开发模式（平时写代码）
+
+```bash
+# 1. Docker 只跑数据库（容器后端/网站不启动，8080 留给 IDEA）
+docker compose up -d mysql redis
+
+# 2. 后端在 IDEA 里跑 CampusApplication，或命令行：
 cd backend
 mvn spring-boot:run -pl campus-api
 #    验证：浏览器打开 http://localhost:8080/api/news 能看到 JSON
 
-# 3. 启动网站端（默认 5173，/api 由 vite 代理转发到后端）
+# 3. 网站端热更新开发（默认 5173，/api 由 vite 代理转发到后端）
 cd web
 npm install
 npm run dev
@@ -48,6 +65,10 @@ npm run dev
 # 4. 小程序端：用 HBuilderX 导入 miniapp/ 目录，运行到微信开发者工具
 #    详细步骤见 miniapp/README.md
 ```
+
+> 两种方式别同时开：容器后端和 IDEA 后端都占 8080 端口，会冲突
+> （`docker compose stop backend web` 可只停这两个容器）。
+> 没装 Docker 的同学：本机 MySQL 手动导入 `mysql -uroot -p < docs/sql/001_init.sql` 也行。
 
 ## 目录结构
 
@@ -59,6 +80,8 @@ CampusOS/
 │
 ├── backend/                       # ===== Spring Boot 后端（Maven 多模块，DDD 洋葱架构）=====
 │   ├── pom.xml                    # 父 POM：统一管依赖版本，声明下面五个子模块
+│   ├── Dockerfile                 # 后端镜像：Maven 打包 → JRE 运行（docker compose 用）
+│   ├── docker/                    # 容器构建配套（Maven 阿里云镜像配置）
 │   │
 │   ├── campus-common/             # 〔公共层〕全后端共享的通用代码，不含任何业务
 │   │   └── …/common/
@@ -92,6 +115,8 @@ CampusOS/
 ├── web/                           # ===== Vue3 网站端（Vite + TypeScript + Element Plus）=====
 │   ├── package.json               # 依赖与脚本：npm run dev（开发）/ npm run build（打包）
 │   ├── vite.config.ts             # @ 别名、Element Plus 按需导入、/api 代理转发到后端 8080
+│   ├── Dockerfile                 # 网站镜像：npm build → nginx 托管（docker compose 用）
+│   ├── docker/nginx.conf          # 容器里的 nginx：SPA 路由回退 + /api 反代给后端
 │   ├── .env.development           # 开发环境变量（API 基础路径 /api，走代理免跨域）
 │   ├── .env.production            # 生产环境变量（上线时改成真实后端地址）
 │   ├── index.html                 # 单页应用入口 HTML
@@ -133,7 +158,7 @@ CampusOS/
 │   ├── 新增功能指南.md             # ★ 加功能 step-by-step：建表 → 后端四层 → 网站端 → 小程序端
 │   └── 贡献指南.md                 # 分支/提交规范、各层职责红线、提 PR 前自检
 │
-├── docker-compose.yml             # 一键启动统一环境：MySQL+Redis（docker compose up -d）
+├── docker-compose.yml             # ★ 一键全套：MySQL+Redis+后端+网站（docker compose up -d --build）
 ├── 工程文档-指导版/                 # 课程要求的工程文档（需求规约、测试计划、答辩 PPT 等）
 ├── 项目15个简陋功能.md              # 15 个功能模块的需求描述（做什么以这份为准）
 ├── .gitignore                     # 忽略 node_modules/target/unpackage 等生成物

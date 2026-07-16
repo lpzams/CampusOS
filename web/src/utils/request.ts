@@ -5,7 +5,7 @@
  *  1. 统一 baseURL（读 .env 的 VITE_API_BASE_URL，开发环境是 /api，由 vite 代理转发到后端）；
  *  2. 请求拦截器：预留了加 token 的位置（登录模块做好后取消注释即可）；
  *  3. 响应拦截器：统一"拆包"后端的 Result{code,msg,data} —— 业务代码拿到的直接就是 data，
- *     code !== 200 时统一弹错误提示并 reject，页面里不用每个接口都写 if (res.code === 200)。
+ *     code !== 0 时统一弹错误提示并 reject，页面里不用每个接口都写 if (res.code === 0)。
  *
  * 【新增功能时】不用改这里，直接在 api/你的功能.ts 里 import { get, post, put, del } 使用。
  */
@@ -30,7 +30,8 @@ instance.interceptors.request.use((config) => {
 instance.interceptors.response.use(
   (response) => {
     const result = response.data as Result
-    if (result.code === 200) {
+    // 后端约定：code === 0 才是成功（见 backend ResultCode.SUCCESS），非 0 都是失败
+    if (result.code === 0) {
       // 只把业务数据往下传。注意：从这里开始，Promise 的值已经不是 AxiosResponse 了，
       // 所以下面的 get/post 封装里做了一次类型断言。
       return result.data as never

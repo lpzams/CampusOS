@@ -32,9 +32,9 @@ export function request(options) {
           reject(new Error(`HTTP ${res.statusCode}`))
           return
         }
-        // 业务层：按后端约定 code=200 才算成功
+        // 业务层：按后端约定 code=0 才算成功（见 backend ResultCode.SUCCESS）
         const result = res.data
-        if (result && result.code === 200) {
+        if (result && result.code === 0) {
           resolve(result.data)
         } else {
           const msg = (result && result.msg) || '请求失败'

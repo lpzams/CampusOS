@@ -7,7 +7,7 @@ import java.io.Serializable;
 /**
  * 统一返回结构。所有 Controller 都返回 Result，前端只认这一种格式。
  * <p>
- * 约定：code=200 成功，其余为失败；data 放业务数据；msg 给前端展示的提示。
+ * 约定：code=0 成功（见 {@link ResultCode#SUCCESS}），其余为失败；data 放业务数据；msg 给前端展示的提示。
  * 加功能时不要自己发明返回格式，一律用 Result.success(...) / Result.fail(...)。
  */
 @Data

@@ -42,5 +42,8 @@ desktop.ini
 *.log
 logs/
 
+# ===== Docker：本机端口冲突时的个人覆盖配置（每台电脑自己建，不共享）=====
+docker-compose.override.yml
+
 # ===== 归档/临时文件（backend.zip 是生成骨架时的打包残留，源码以 backend/ 目录为准）=====
 backend.zip
