@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-os</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-common</artifactId>
+    <!--
+      公共模块：Result 统一返回、业务异常、错误码、通用工具、分页对象。
+      被所有层共享，本身不依赖任何内部模块。保持轻量，别往这里塞业务。
+    -->
+
+    <dependencies>
+        <dependency>
+            <groupId>cn.hutool</groupId>
+            <artifactId>hutool-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

@@ -1,0 +1,46 @@
+# ============================================================
+# CampusOS .gitignore
+# 原则：只提交源码和文档，一切"能由源码生成的东西"都不进仓库。
+# ============================================================
+
+# ===== Java / Maven =====
+target/
+*.class
+.mvn/wrapper/maven-wrapper.jar
+
+# ===== Node / 前端 =====
+node_modules/
+dist/
+dist-ssr/
+*.local
+# unplugin 自动生成的类型声明（npm run dev 时会重新生成）
+web/auto-imports.d.ts
+web/components.d.ts
+
+# ===== uni-app / HBuilderX =====
+unpackage/
+.hbuilderx/
+
+# ===== IDE =====
+.idea/
+*.iml
+.vscode/
+*.code-workspace
+
+# ===== Claude Code 本地配置 =====
+.claude/settings.local.json
+
+# ===== 操作系统 =====
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ===== Office 打开文档时的临时锁文件 =====
+~$*
+
+# ===== 日志 =====
+*.log
+logs/
+
+# ===== 归档/临时文件（backend.zip 是生成骨架时的打包残留，源码以 backend/ 目录为准）=====
+backend.zip

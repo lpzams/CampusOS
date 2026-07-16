@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- 简易校徽风 favicon：蓝底 + 学士帽 -->
+  <rect width="64" height="64" rx="12" fill="#2f54eb"/>
+  <path d="M32 16 L54 26 L32 36 L10 26 Z" fill="#fff"/>
+  <path d="M20 31 v9 c0 3 5.4 6 12 6 s12-3 12-6 v-9 l-12 5.5 Z" fill="#fff" opacity="0.85"/>
+  <rect x="51" y="26" width="3" height="12" rx="1.5" fill="#fff" opacity="0.9"/>
+</svg>

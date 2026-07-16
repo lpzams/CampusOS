@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-os</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-api</artifactId>
+    <!--
+      接入层(最外层)：程序启动入口 + Controller + 全局异常处理 + 网关配置。
+      - controller: 每个功能一个包，只负责收请求、调 application、返回 Result
+      - config:     Web/MyBatis-Plus/Swagger/跨域 等配置
+      - 启动类 CampusApiApplication 在这里
+      规则：依赖 application(编排) 和 infrastructure(为了运行时能注入实现)。
+      Controller 不写业务逻辑，业务在 application 层。
+    -->
+
+    <dependencies>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-application</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <!-- 运行时需要基础设施提供仓储实现，故编译期也引入以便装配 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-infrastructure</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <!-- 接口文档 Swagger (knife4j) -->
+        <dependency>
+            <groupId>com.github.xiaoymin</groupId>
+            <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
+            <version>4.4.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>campus-api</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.campus.api.CampusApplication</mainClass>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

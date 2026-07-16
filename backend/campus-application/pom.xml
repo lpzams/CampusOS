@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-os</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-application</artifactId>
+    <!--
+      应用层：用例编排(AppService)、DTO、Command(写)、Query(读)。
+      规则：依赖 domain，不依赖 infrastructure（通过 domain 的仓储接口调用）。
+      不写业务规则(那是 domain 的职责)，只做流程编排和事务边界。
+    -->
+
+    <dependencies>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-domain</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <!-- 公共模块：Result / PageResult / BusinessException 等 -->
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <!-- Command 上的 @NotBlank/@Size 等校验注解（版本由 spring-boot parent 管理） -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
+        <!-- 仅用 @Service/@Transactional 等注解做编排，不引 web/orm -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

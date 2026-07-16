@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.campus</groupId>
+        <artifactId>campus-os</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>campus-domain</artifactId>
+    <!--
+      领域层（洋葱最内核）：领域实体、值对象、领域服务、仓储接口(端口)。
+      规则：只依赖 common，不依赖 Spring / MyBatis / 任何框架。保持纯净 POJO。
+      仓储接口定义在这里，实现放 infrastructure（依赖倒置）。
+    -->
+
+    <dependencies>
+        <dependency>
+            <groupId>com.campus</groupId>
+            <artifactId>campus-common</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+</project>

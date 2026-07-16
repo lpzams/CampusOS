@@ -1,0 +1,30 @@
+{
+  "name": "campus-web",
+  "version": "1.0.0",
+  "description": "高校智慧校园门户系统 - Vue3 网站前端",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "lint": "eslint . --ext .vue,.ts,.tsx --fix"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "element-plus": "^2.7.6",
+    "@element-plus/icons-vue": "^2.3.1",
+    "pinia": "^2.1.7",
+    "vue": "^3.4.31",
+    "vue-router": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.9",
+    "@vitejs/plugin-vue": "^5.0.5",
+    "typescript": "^5.5.2",
+    "unplugin-auto-import": "^0.17.6",
+    "unplugin-vue-components": "^0.27.2",
+    "vite": "^5.3.2",
+    "vue-tsc": "^2.0.24"
+  }
+}

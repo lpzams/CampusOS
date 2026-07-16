@@ -1,0 +1,15 @@
+/**
+ * uni.scss —— uni-app 约定的全局 SCSS 变量文件（自动注入每个页面，无需 import）。
+ * 想统一改主题色，只改这里即可。
+ */
+
+/* 主题色（和网站端顶栏、pages.json 导航栏保持一致） */
+$campus-primary: #2f54eb;
+
+/* 文字颜色（对齐 Element Plus 的默认灰阶，双端观感一致） */
+$campus-text-main: #303133;
+$campus-text-secondary: #606266;
+$campus-text-muted: #909399;
+
+/* 页面背景 */
+$campus-bg: #f5f6fa;

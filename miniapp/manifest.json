@@ -1,0 +1,26 @@
+{
+  "name": "campus-miniapp",
+  "appid": "",
+  "description": "高校智慧校园门户系统 - 微信小程序端",
+  "versionName": "1.0.0",
+  "versionCode": "100",
+  "transformPx": false,
+  "vueVersion": "3",
+  "locale": "zh-Hans",
+  "mp-weixin": {
+    "appid": "touristappid",
+    "setting": {
+      "urlCheck": false,
+      "es6": true,
+      "postcss": true,
+      "minified": true
+    },
+    "usingComponents": true
+  },
+  "uniStatistics": {
+    "enable": false
+  },
+  "h5": {
+    "title": "智慧校园"
+  }
+}
