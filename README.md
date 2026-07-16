@@ -29,8 +29,11 @@
 > 前置：JDK 17+、Maven 3.8+、Node 18+、MySQL 8、微信开发者工具（跑小程序才需要）。
 
 ```bash
-# 1. 初始化数据库（建库 campus_os + 新闻表 + 示例数据）
-mysql -uroot -p < docs/sql/init.sql
+# 1. 一键启动统一数据库环境（MySQL 8 + Redis，需先装 Docker Desktop）
+#    首次启动会自动执行 docs/sql/ 全部脚本：建库 campus_os + 新闻表 + 示例数据
+docker compose up -d
+#    常用：down 停止 / down -v 清空重建 / logs campus-mysql 看日志（详见 docker-compose.yml 头部注释）
+#    没装 Docker 的同学也可用本机 MySQL 手动导入：mysql -uroot -p < docs/sql/001_init.sql
 
 # 2. 启动后端（默认 8080；数据库账号密码在 backend/campus-api/src/main/resources/application.yml）
 cd backend
@@ -126,10 +129,11 @@ CampusOS/
 │
 ├── docs/                          # ===== 团队文档 =====
 │   ├── sql/
-│   │   └── init.sql               # 建库 campus_os + t_news + 示例数据；新表按 002_功能.sql 递增追加
+│   │   └── 001_init.sql           # 建库 campus_os + t_news + 示例数据；新表按 002_功能.sql 递增追加
 │   ├── 新增功能指南.md             # ★ 加功能 step-by-step：建表 → 后端四层 → 网站端 → 小程序端
 │   └── 贡献指南.md                 # 分支/提交规范、各层职责红线、提 PR 前自检
 │
+├── docker-compose.yml             # 一键启动统一环境：MySQL+Redis（docker compose up -d）
 ├── 工程文档-指导版/                 # 课程要求的工程文档（需求规约、测试计划、答辩 PPT 等）
 ├── 项目15个简陋功能.md              # 15 个功能模块的需求描述（做什么以这份为准）
 ├── .gitignore                     # 忽略 node_modules/target/unpackage 等生成物

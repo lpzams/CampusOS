@@ -9,7 +9,7 @@
 2. HBuilderX 菜单 `文件 -> 导入 -> 从本地目录导入`，选择本 `miniapp` 目录；
 3. 安装 [微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)，
    并在其 `设置 -> 安全设置` 里开启「服务端口」（HBuilderX 要靠它拉起微信开发者工具）；
-4. 先把后端跑起来（默认 `http://localhost:8080`，数据库先执行 `docs/sql/init.sql`）；
+4. 先把后端跑起来（默认 `http://localhost:8080`，数据库用项目根目录 `docker compose up -d` 一键启动）；
 5. HBuilderX 菜单 `运行 -> 运行到小程序模拟器 -> 微信开发者工具`。
 
 > 注意（都和"域名校验"有关）：

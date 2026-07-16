@@ -1,15 +1,17 @@
 -- ============================================================
--- CampusOS 数据库初始化脚本
+-- CampusOS 数据库初始化脚本（001 号，最先执行）
 --
 -- 用法（任选其一）：
---   命令行： mysql -uroot -p < docs/sql/init.sql
---   图形化： Navicat / DataGrip 里直接整个文件运行
+--   Docker（推荐）：项目根目录 docker compose up -d，首次启动自动执行本目录全部脚本
+--   命令行：        mysql -uroot -p < docs/sql/001_init.sql
+--   图形化：        Navicat / DataGrip 里直接整个文件运行
 --
 -- 账号密码与后端 backend/campus-api/src/main/resources/application.yml
 -- 里的 spring.datasource 保持一致（默认 root/root，按需修改）。
 --
--- 【新增功能时】不要改别人的表；在本目录新建 002_你的功能.sql，
--- 写你自己的建表语句，并在 docs/新增功能指南.md 的约定下走评审。
+-- 【新增功能时】不要改别人的表；在本目录新建 002_你的功能.sql（编号递增），
+-- 且文件第一行写 USE campus_os; —— Docker 首次启动会按文件名顺序自动执行，
+-- 已有环境的同学执行 docker compose down -v && docker compose up -d 重建即可同步。
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS campus_os

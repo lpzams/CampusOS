@@ -17,7 +17,7 @@
 ## 本地运行
 
 ```bash
-# 0. 前置：后端已启动（默认 http://localhost:8080），数据库已执行 docs/sql/init.sql
+# 0. 前置：后端已启动（默认 http://localhost:8080），数据库用项目根目录 docker compose up -d 一键启动
 # 1. 安装依赖（Node 18+）
 npm install
 # 2. 启动开发服务器，浏览器打开 http://localhost:5173
