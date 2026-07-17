@@ -5,10 +5,21 @@ import lombok.Data;
 import java.io.Serializable;
 
 /**
- * 统一返回结构。所有 Controller 都返回 Result，前端只认这一种格式。
+ * 统一返回结构
  * <p>
- * 约定：code=200 成功，其余为失败；data 放业务数据；msg 给前端展示的提示。
- * 加功能时不要自己发明返回格式，一律用 Result.success(...) / Result.fail(...)。
+ * 所有 Controller 统一返回 Result，前端统一解析
+ * <p>
+ * 用法：
+ * <pre>
+ * // 成功返回数据
+ * return Result.success(data);
+ * // 成功无数据
+ * return Result.success();
+ * // 业务异常
+ * throw new BusinessException(ResultCode.USERNAME_EXISTS);
+ * // 自定义消息
+ * throw new BusinessException("自定义错误消息");
+ * </pre>
  */
 @Data
 public class Result<T> implements Serializable {
@@ -17,16 +28,24 @@ public class Result<T> implements Serializable {
     private String msg;
     private T data;
 
-    public static <T> Result<T> success(T data) {
-        Result<T> r = new Result<>();
-        r.setCode(ResultCode.SUCCESS.getCode());
-        r.setMsg(ResultCode.SUCCESS.getMessage());
-        r.setData(data);
-        return r;
-    }
+    // ===== 成功 =====
 
     public static <T> Result<T> success() {
         return success(null);
+    }
+
+    public static <T> Result<T> success(T data) {
+        Result<T> result = new Result<>();
+        result.setCode(ResultCode.SUCCESS.getCode());
+        result.setMsg(ResultCode.SUCCESS.getMessage());
+        result.setData(data);
+        return result;
+    }
+
+    // ===== 失败 =====
+
+    public static <T> Result<T> fail() {
+        return fail(ResultCode.FAILED);
     }
 
     public static <T> Result<T> fail(String msg) {
@@ -34,10 +53,10 @@ public class Result<T> implements Serializable {
     }
 
     public static <T> Result<T> fail(int code, String msg) {
-        Result<T> r = new Result<>();
-        r.setCode(code);
-        r.setMsg(msg);
-        return r;
+        Result<T> result = new Result<>();
+        result.setCode(code);
+        result.setMsg(msg);
+        return result;
     }
 
     public static <T> Result<T> fail(ResultCode resultCode) {

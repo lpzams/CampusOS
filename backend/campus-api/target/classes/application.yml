@@ -1,5 +1,5 @@
 server:
-  port: 8080
+  port: 8081
   servlet:
     context-path: /
 
@@ -9,16 +9,15 @@ spring:
   # ===== 数据源：改成你自己的库名 / 账号 / 密码 =====
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/campus_os?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: root
+    password: 123456
   # ===== Redis：项目里认证、缓存会用到，本机默认配置 =====
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
-      # password:   # 有密码再填
 
 # ===== MyBatis-Plus =====
 mybatis-plus:
