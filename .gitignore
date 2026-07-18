@@ -1,11 +1,15 @@
 # ============================================================
 # CampusOS .gitignore
 # 原则：只提交源码和文档，一切"能由源码生成的东西"都不进仓库。
+# （合并 feature/login 时取两侧并集）
 # ============================================================
 
 # ===== Java / Maven =====
 target/
 *.class
+*.jar
+*.war
+*.ear
 .mvn/wrapper/maven-wrapper.jar
 
 # ===== Node / 前端 =====
@@ -24,8 +28,16 @@ unpackage/
 # ===== IDE =====
 .idea/
 *.iml
+*.iws
+*.ipr
+out/
 .vscode/
 *.code-workspace
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.springBeans
 
 # ===== Claude Code 本地配置 =====
 .claude/settings.local.json
@@ -34,13 +46,25 @@ unpackage/
 .DS_Store
 Thumbs.db
 desktop.ini
+Desktop.ini
 
 # ===== Office 打开文档时的临时锁文件 =====
 ~$*
 
-# ===== 日志 =====
+# ===== 日志 / 临时文件 =====
 *.log
 logs/
+*.tmp
+*.bak
+*.swp
+*.swo
+*~
+
+# ===== 环境变量 / 敏感信息（每台电脑自己建，不共享）=====
+.env
+.env.local
+.env.*.local
+application-local.yml
 
 # ===== Docker：本机端口冲突时的个人覆盖配置（每台电脑自己建，不共享）=====
 docker-compose.override.yml
