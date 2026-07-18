@@ -1,5 +1,6 @@
 package com.campus.api.controller;
 
+import com.campus.application.user.command.ForgotPasswordCommand;
 import com.campus.application.user.command.LoginCommand;
 import com.campus.application.user.command.RegisterCommand;
 import com.campus.application.user.command.SmsLoginCommand;
@@ -68,6 +69,16 @@ public class UserController {
     public Result<Void> register(@Valid @RequestBody RegisterCommand command) {
         log.info("用户注册: {}", command);
         userAppService.register(command);
+        return Result.success();
+    }
+
+    // ==================== 忘记密码 ====================
+
+    @PostMapping("/forgot-password")
+    @Operation(summary = "忘记密码", description = "通过手机验证码重置密码，重置后需重新登录")
+    public Result<Void> forgotPassword(@Valid @RequestBody ForgotPasswordCommand command) {
+        log.info("忘记密码: username={}, phone={}", command.getUsername(), command.getPhone());
+        userAppService.forgotPassword(command);
         return Result.success();
     }
 

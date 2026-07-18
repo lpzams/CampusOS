@@ -32,7 +32,7 @@ public class SmsService {
 
         // 2. 存入 Redis（5分钟过期）
         String key = RedisConstants.getSmsCodeKey(phone);
-        stringRedisTemplate.opsForValue().set(key, code, RedisConstants.CODE_EXPIRE_SECONDS, TimeUnit.SECONDS);
+        stringRedisTemplate.opsForValue().set(key, code, RedisConstants.SMS_CODE_EXPIRE_SECONDS, TimeUnit.SECONDS);
 
         // 3. 调用短信平台发送
         log.info("验证码发送成功: phone={}, code={}", phone, code);

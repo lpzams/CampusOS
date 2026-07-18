@@ -1,5 +1,6 @@
 package com.campus.application.user.service;
 
+import com.campus.application.user.command.ForgotPasswordCommand;
 import com.campus.application.user.command.LoginCommand;
 import com.campus.application.user.command.RegisterCommand;
 import com.campus.application.user.command.SmsLoginCommand;
@@ -9,6 +10,7 @@ import com.campus.common.api.ResultCode;
 import com.campus.common.constant.RedisConstants;
 import com.campus.common.constant.UserConstants;
 import com.campus.common.context.LoginUser;
+import com.campus.common.context.LoginUserHolder;
 import com.campus.common.exception.BusinessException;
 import com.campus.domain.user.entity.User;
 import com.campus.domain.user.entity.UserProfile;
@@ -229,8 +231,47 @@ public class UserAppService {
             return;
         }
         String tokenKey = RedisConstants.getTokenKey(token);
-        Boolean deleted = stringRedisTemplate.delete(tokenKey);
+        Boolean deleted = stringRedisTemplate.delete(tokenKey)
+                && stringRedisTemplate.delete(RedisConstants.getUserInfoKey(LoginUserHolder.get().getUserId()));
         log.info("退出登录: token={}, deleted={}", token.substring(0, Math.min(16, token.length())) + "...", deleted);
+    }
+
+    // ==================== 忘记密码 ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public void forgotPassword(ForgotPasswordCommand command) {
+        log.info("忘记密码: username={}, phone={}", command.getUsername(), command.getPhone());
+
+        // 1. 校验短信验证码
+        smsService.validateSmsCode(command.getPhone(), command.getCode());
+
+        // 2. 根据用户名查询用户
+        User user = userRepository.findByUsername(command.getUsername());
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 3. 校验手机号是否与注册时一致
+        user.validatePhoneMatch(command.getPhone());
+
+        // 4. 检查账号状态（冻结/注销等）
+        user.checkStatus();
+
+        // 5. 检查锁定状态
+        user.checkLock();
+
+        // 6. 加密新密码并重置
+        String encodedPassword = passwordEncoder.encode(command.getNewPassword());
+        user.resetPassword(encodedPassword);
+        userRepository.update(user);
+
+        // 7. 清除该用户现有的 Token（强制重新登录）
+        clearUserTokens(user.getId());
+
+        // 8. 清除登录失败计数
+        clearLoginFail(command.getUsername());
+
+        log.info("密码重置成功: userId={}, username={}", user.getId(), user.getUsername());
     }
 
     // ==================== 私有辅助方法 ====================
@@ -264,6 +305,19 @@ public class UserAppService {
     private void clearLoginFail(String username) {
         String failKey = RedisConstants.getLoginFailKey(username);
         stringRedisTemplate.delete(failKey);
+    }
+
+    /**
+     * 清除用户所有 Token（密码重置、强制下线等场景）
+     */
+    private void clearUserTokens(Long userId) {
+        String userTokenKey = RedisConstants.getUserTokenKey(userId);
+        String existingToken = stringRedisTemplate.opsForValue().get(userTokenKey);
+        if (existingToken != null) {
+            stringRedisTemplate.delete(RedisConstants.getTokenKey(existingToken));
+            stringRedisTemplate.delete(userTokenKey);
+            log.info("已清除用户 Token: userId={}", userId);
+        }
     }
 
     /**

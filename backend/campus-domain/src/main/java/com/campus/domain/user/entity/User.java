@@ -249,4 +249,28 @@ public class User {
     public boolean isAdmin() {
         return this.userType != null && this.userType == 3;
     }
+
+    // ========== 密码相关 ==========
+
+    /**
+     * 校验手机号是否与注册时一致
+     */
+    public void validatePhoneMatch(String phone) {
+        if (this.phone == null || !this.phone.equals(phone)) {
+            throw new BusinessException("手机号与注册时不一致");
+        }
+    }
+
+    /**
+     * 重置密码
+     */
+    public void resetPassword(String encodedNewPassword) {
+        if (encodedNewPassword == null || encodedNewPassword.trim().isEmpty()) {
+            throw new BusinessException("新密码不能为空");
+        }
+        this.passwordHash = encodedNewPassword;
+        this.loginFailCount = 0;
+        this.lockTime = null;
+        this.updatedTime = LocalDateTime.now();
+    }
 }
