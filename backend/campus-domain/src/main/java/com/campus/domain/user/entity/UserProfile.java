@@ -16,11 +16,15 @@ public class UserProfile {
     private String major;
     private String className;
     private String enrollmentYear;
+    private String dormitory;
+    private String advisor;
 
     // ===== 教师字段 =====
     private String teacherId;
     private String title;
     private String researchDirection;
+    private String office;
+    private String introduction;
 
     // ===== 认证字段 =====
     private String idCard;
@@ -36,13 +40,11 @@ public class UserProfile {
 
     // ========== 工厂方法 ==========
 
-    /**
-     * 创建学生详细信息
-     */
-    public static UserProfile createStudent(Long userId,
+    public static UserProfile createStudent(Long userId, String studentId,
                                             String major, String className,
                                             String enrollmentYear) {
         UserProfile profile = new UserProfile();
+        profile.setStudentId(studentId);
         profile.setUserId(userId);
         profile.setMajor(major);
         profile.setClassName(className);
@@ -51,9 +53,6 @@ public class UserProfile {
         return profile;
     }
 
-    /**
-     * 创建教师详细信息
-     */
     public static UserProfile createTeacher(Long userId,
                                             String title, String researchDirection) {
         UserProfile profile = new UserProfile();
@@ -64,11 +63,8 @@ public class UserProfile {
         return profile;
     }
 
-    /**
-     * 初始化
-     */
     private void init() {
-        this.verifyStatus = 0;  // 未认证
+        this.verifyStatus = 0;
         this.createdTime = LocalDateTime.now();
         this.updatedTime = LocalDateTime.now();
     }
@@ -78,16 +74,21 @@ public class UserProfile {
     /**
      * 提交实名认证
      */
-    public void submitVerify(String idCard, String idCardFront,
-                             String idCardBack, String studentCard) {
-        if (this.verifyStatus == 2) {
+    public void submitVerify(String realName, String idCard,
+                             String idCardFront, String idCardBack,
+                             String studentId) {
+        if (this.verifyStatus != null && this.verifyStatus == 2) {
             throw new BusinessException("已认证通过，无需重复提交");
+        }
+        if (this.verifyStatus != null && this.verifyStatus == 1) {
+            throw new BusinessException("实名认证审核中，请耐心等待");
         }
         this.idCard = idCard;
         this.idCardFront = idCardFront;
         this.idCardBack = idCardBack;
-        this.studentCard = studentCard;
+        this.studentId = studentId;
         this.verifyStatus = 1;  // 审核中
+        this.verifyReason = null;
         this.updatedTime = LocalDateTime.now();
     }
 
@@ -116,42 +117,37 @@ public class UserProfile {
     }
 
     /**
-     * 是否已认证
+     * 更新基本信息（仅允许修改：realName 在 User 层、phone、email、gender）
+     * Profile 层更新学生/教师特有字段
      */
+    public void updateStudentInfo(String major, String className, String enrollmentYear,
+                                  String dormitory, String advisor) {
+        this.major = major;
+        this.className = className;
+        this.enrollmentYear = enrollmentYear;
+        this.dormitory = dormitory;
+        this.advisor = advisor;
+        this.updatedTime = LocalDateTime.now();
+    }
+
+    public void updateTeacherInfo(String title, String researchDirection,
+                                  String office, String introduction) {
+        this.title = title;
+        this.researchDirection = researchDirection;
+        this.office = office;
+        this.introduction = introduction;
+        this.updatedTime = LocalDateTime.now();
+    }
+
     public boolean isVerified() {
         return this.verifyStatus != null && this.verifyStatus == 2;
     }
 
-    /**
-     * 是否学生
-     */
     public boolean isStudent() {
         return this.studentId != null && !this.studentId.isEmpty();
     }
 
-    /**
-     * 是否教师
-     */
     public boolean isTeacher() {
         return this.teacherId != null && !this.teacherId.isEmpty();
-    }
-
-    /**
-     * 更新学生信息
-     */
-    public void updateStudentInfo(String major, String className, String enrollmentYear) {
-        this.major = major;
-        this.className = className;
-        this.enrollmentYear = enrollmentYear;
-        this.updatedTime = LocalDateTime.now();
-    }
-
-    /**
-     * 更新教师信息
-     */
-    public void updateTeacherInfo(String title, String researchDirection) {
-        this.title = title;
-        this.researchDirection = researchDirection;
-        this.updatedTime = LocalDateTime.now();
     }
 }

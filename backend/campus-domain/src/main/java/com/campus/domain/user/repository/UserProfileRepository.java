@@ -7,4 +7,6 @@ public interface UserProfileRepository {
     void save(UserProfile profile);
 
     UserProfile findByUserId(Long userId);
+
+    void update(UserProfile profile);
 }

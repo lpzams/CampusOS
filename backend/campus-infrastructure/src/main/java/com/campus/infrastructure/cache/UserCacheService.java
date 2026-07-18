@@ -2,6 +2,7 @@ package com.campus.infrastructure.cache;
 
 import com.campus.common.constant.RedisConstants;
 import com.campus.domain.user.entity.User;
+import com.campus.domain.user.entity.UserProfile;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -143,6 +144,52 @@ public class UserCacheService {
         }
 
         log.debug("删除用户缓存: userId={}", user.getId());
+    }
+
+    // ==================== Profile 缓存 ====================
+
+    /**
+     * 从缓存获取用户详情
+     */
+    public UserProfile getProfile(Long userId) {
+        if (userId == null) return null;
+        String key = RedisConstants.getUserProfileKey(userId);
+        String json = stringRedisTemplate.opsForValue().get(key);
+        if (json == null) return null;
+        try {
+            return objectMapper.readValue(json, UserProfile.class);
+        } catch (Exception e) {
+            log.warn("反序列化 Profile 缓存失败: key={}", key);
+            stringRedisTemplate.delete(key);
+            return null;
+        }
+    }
+
+    /**
+     * 回填用户详情缓存
+     */
+    public void putProfile(UserProfile profile) {
+        if (profile == null || profile.getUserId() == null) return;
+        try {
+            String json = objectMapper.writeValueAsString(profile);
+            stringRedisTemplate.opsForValue().set(
+                    RedisConstants.getUserProfileKey(profile.getUserId()),
+                    json,
+                    RedisConstants.USER_INFO_EXPIRE_SECONDS,
+                    TimeUnit.SECONDS
+            );
+        } catch (Exception e) {
+            log.error("序列化 Profile 失败: userId={}", profile.getUserId(), e);
+        }
+    }
+
+    /**
+     * 删除用户详情缓存（写操作后调用）
+     */
+    public void evictProfile(Long userId) {
+        if (userId == null) return;
+        stringRedisTemplate.delete(RedisConstants.getUserProfileKey(userId));
+        log.debug("删除 Profile 缓存: userId={}", userId);
     }
 
     // ==================== 私有工具方法 ====================

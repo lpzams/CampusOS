@@ -19,6 +19,9 @@ public final class RedisConstants {
     /** 用户信息缓存前缀（userId → User JSON） */
     public static final String USER_INFO_PREFIX = "user:info:";
 
+    /** 用户详情缓存前缀（userId → UserProfile JSON） */
+    public static final String USER_PROFILE_PREFIX = "user:profile:";
+
     /** 用户名 → userId 映射前缀 */
     public static final String USERNAME_ID_PREFIX = "user:id:username:";
 
@@ -103,6 +106,11 @@ public final class RedisConstants {
     /** 用户信息缓存 Key */
     public static String getUserInfoKey(Long userId) {
         return USER_INFO_PREFIX + userId;
+    }
+
+    /** 用户详情缓存 Key */
+    public static String getUserProfileKey(Long userId) {
+        return USER_PROFILE_PREFIX + userId;
     }
 
     /** 用户名 → userId 映射 Key */
