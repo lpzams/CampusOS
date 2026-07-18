@@ -66,6 +66,14 @@ function goDetail(id) {
 
 // ===== 页面生命周期（来自 @dcloudio/uni-app，不是 vue 的 onMounted） =====
 onLoad(() => {
+  // 检查登录态
+  const token = uni.getStorageSync('token')
+  if (!token) {
+    // 未登录，跳转登录页（用 redirectTo 不让用户返回）
+    uni.redirectTo({ url: '/pages/login/login' })
+    return
+  }
+  // 已登录，加载数据
   loadPage(true)
 })
 

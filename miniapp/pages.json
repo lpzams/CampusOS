@@ -1,11 +1,16 @@
 {
   "pages": [
     {
+      "path": "pages/login/login",
+      "style": {
+        "navigationBarTitleText": "登录",
+        "navigationStyle": "custom"
+      }
+    },
+    {
       "path": "pages/index/index",
       "style": {
-        "navigationBarTitleText": "智慧校园",
-        "enablePullDownRefresh": true,
-        "backgroundTextStyle": "dark"
+        "navigationBarTitleText": "智慧校园"
       }
     },
     {
@@ -16,9 +21,23 @@
     }
   ],
   "globalStyle": {
-    "navigationBarTextStyle": "white",
-    "navigationBarTitleText": "智慧校园",
-    "navigationBarBackgroundColor": "#2f54eb",
-    "backgroundColor": "#f5f6fa"
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "智慧校园门户",
+    "navigationBarBackgroundColor": "#F8F8F8",
+    "backgroundColor": "#F8F8F8"
+  },
+  "tabBar": {
+    "color": "#7A7E83",
+    "selectedColor": "#2f54eb",
+    "borderStyle": "black",
+    "backgroundColor": "#ffffff",
+    "list": [
+      {
+        "pagePath": "pages/index/index",
+        "iconPath": "static/home.png",
+        "selectedIconPath": "static/home-active.png",
+        "text": "首页"
+      }
+    ]
   }
 }

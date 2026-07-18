@@ -1,48 +1,59 @@
 <script setup lang="ts">
 /**
- * 新闻列表页 —— 「读」页面的标准写法示例。
- *
- * 流程：onMounted 拉第一页 -> 用户改搜索条件/翻页 -> 重新调 pageNews()。
- * 对应后端接口：GET /api/news（只返回已发布的新闻）。
- *
- * 【新增功能时】做列表页照抄本文件：换成你的 api 函数、字段和筛选条件即可。
+ * 新闻列表页 —— 展示所有已发布的新闻。
+ * 对应后端接口：GET /news/list
  */
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { NEWS_CATEGORIES, pageNews } from '@/api/news'
-import type { NewsItem } from '@/api/news'
-import { formatDateTime, summary } from '@/utils/format'
+import { getNewsList, getNewsCategories } from '@/api/news'
+import type { NewsListItem, NewsCategory } from '@/api/types'
+import { formatDateTime } from '@/utils/format'  // ✅ formatDate → formatDateTime
 
 const router = useRouter()
 
 const loading = ref(false)
-const list = ref<NewsItem[]>([])
+const list = ref<NewsListItem[]>([])
+const categories = ref<NewsCategory[]>([])
 const total = ref(0)
 
-// 查询条件：pageNum/pageSize 对应后端 PageQuery，keyword/category 对应 NewsPageQuery。
-// 空字符串表示"不筛选"，后端对空白条件会自动忽略。
 const query = reactive({
-  pageNum: 1,
-  pageSize: 10,
+  page: 1,
+  size: 10,
   keyword: '',
-  category: '',
+  categoryId: undefined as number | undefined,
 })
+
+async function fetchCategories() {
+  try {
+    const res = await getNewsCategories()
+    if (res.code === 200) {
+      categories.value = res.data || []
+    }
+  } catch {
+    // 分类接口失败不影响主列表
+  }
+}
 
 async function fetchList() {
   loading.value = true
   try {
-    const page = await pageNews(query)
-    list.value = page.list
-    total.value = page.total
+    const res = await getNewsList({
+      page: query.page,
+      size: query.size,
+      keyword: query.keyword || undefined,
+      categoryId: query.categoryId,
+    })
+    if (res.code === 200 && res.data) {
+      list.value = res.data.list || []
+      total.value = res.data.total || 0
+    }
   } finally {
-    // 无论成功失败都要关 loading（错误提示已由 request.ts 统一弹出）
     loading.value = false
   }
 }
 
-/** 搜索条件变化：回到第一页再查，否则可能停在一个不存在的页码上 */
 function handleSearch() {
-  query.pageNum = 1
+  query.page = 1
   fetchList()
 }
 
@@ -50,7 +61,10 @@ function goDetail(id: number) {
   router.push(`/news/${id}`)
 }
 
-onMounted(fetchList)
+onMounted(() => {
+  fetchCategories()
+  fetchList()
+})
 </script>
 
 <template>
@@ -67,17 +81,17 @@ onMounted(fetchList)
           @clear="handleSearch"
         />
         <el-select
-          v-model="query.category"
-          placeholder="全部栏目"
+          v-model="query.categoryId"
+          placeholder="全部分类"
           clearable
           class="search-select"
           @change="handleSearch"
         >
           <el-option
-            v-for="c in NEWS_CATEGORIES"
-            :key="c"
-            :label="c"
-            :value="c"
+            v-for="c in categories"
+            :key="c.id"
+            :label="c.name"
+            :value="c.id"
           />
         </el-select>
         <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -86,7 +100,7 @@ onMounted(fetchList)
 
     <!-- 新闻列表 -->
     <div v-loading="loading" class="news-list">
-      <el-empty v-if="!loading && list.length === 0" description="暂无新闻，可以去「新闻管理」发布一条试试" />
+      <el-empty v-if="!loading && list.length === 0" description="暂无新闻" />
 
       <el-card
         v-for="item in list"
@@ -99,20 +113,21 @@ onMounted(fetchList)
           <span class="news-title">{{ item.title }}</span>
           <el-tag size="small">{{ item.category }}</el-tag>
         </div>
-        <p class="news-summary">{{ summary(item.content) }}</p>
+        <p class="news-summary">{{ item.summary || '暂无摘要' }}</p>
         <div class="news-meta">
-          <span>{{ item.author }}</span>
-          <span>{{ formatDateTime(item.publishedAt) }}</span>
-          <span>{{ item.viewCount }} 次浏览</span>
+          <span>📂 {{ item.category }}</span>
+          <span>👁️ {{ item.viewCount }}</span>
+          <!-- ✅ formatDate → formatDateTime -->
+          <span>📅 {{ formatDateTime(item.createTime) }}</span>
         </div>
       </el-card>
     </div>
 
-    <!-- 分页器：total 由后端返回，页码/条数变化时重新查询 -->
+    <!-- 分页 -->
     <div class="pagination-row">
       <el-pagination
-        v-model:current-page="query.pageNum"
-        v-model:page-size="query.pageSize"
+        v-model:current-page="query.page"
+        v-model:page-size="query.size"
         :total="total"
         :page-sizes="[5, 10, 20]"
         layout="total, prev, pager, next, sizes"
@@ -128,56 +143,50 @@ onMounted(fetchList)
 .search-bar {
   margin-bottom: 16px;
 }
-
 .search-form {
   display: flex;
   gap: 12px;
 }
-
 .search-input {
   flex: 1;
 }
-
 .search-select {
   width: 160px;
 }
-
 .news-list {
   min-height: 200px;
 }
-
 .news-card {
   margin-bottom: 12px;
   cursor: pointer;
 }
-
 .news-title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
-
 .news-title {
   font-size: 16px;
   font-weight: 600;
   color: #303133;
 }
-
 .news-summary {
   margin: 8px 0;
   color: #606266;
   font-size: 14px;
   line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-
 .news-meta {
   display: flex;
   gap: 16px;
   color: #909399;
   font-size: 13px;
 }
-
 .pagination-row {
   display: flex;
   justify-content: center;

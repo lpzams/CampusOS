@@ -3,9 +3,9 @@
  *
  * 【它做了三件事】
  *  1. 统一 baseURL（读 .env 的 VITE_API_BASE_URL，开发环境是 /api，由 vite 代理转发到后端）；
- *  2. 请求拦截器：预留了加 token 的位置（登录模块做好后取消注释即可）；
+ *  2. 请求拦截器：自动携带 token（Authorization: Bearer xxx）；
  *  3. 响应拦截器：统一"拆包"后端的 Result{code,msg,data} —— 业务代码拿到的直接就是 data，
- *     code !== 0 时统一弹错误提示并 reject，页面里不用每个接口都写 if (res.code === 0)。
+ *     code !== 200 时统一弹错误提示并 reject，并自动处理 token 过期（401 时静默刷新重发）。
  *
  * 【新增功能时】不用改这里，直接在 api/你的功能.ts 里 import { get, post, put, del } 使用。
  */
@@ -18,25 +18,99 @@ const instance = axios.create({
   timeout: 10000,
 })
 
-// ===== 请求拦截器：发出去之前统一加工 =====
+// ===== 请求拦截器：自动携带 token =====
 instance.interceptors.request.use((config) => {
-  // TODO 登录模块（功能 1）完成后，在这里带上 token：
-  // const token = localStorage.getItem('token')
-  // if (token) config.headers.Authorization = `Bearer ${token}`
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
   return config
 })
 
-// ===== 响应拦截器：回来之后统一拆包 =====
+// ============================================================
+// ===== 1.8 核心：响应拦截器 + Token 自动刷新 =====
+// ============================================================
+
+// 是否正在刷新 token（防止并发请求多次刷新）
+let isRefreshing = false
+// 等待队列：刷新期间挂起的请求
+let pendingRequests: Array<{
+  resolve: (value: any) => void
+  reject: (reason?: any) => void
+  config: any
+}> = []
+
 instance.interceptors.response.use(
   (response) => {
     const result = response.data as Result
-    // 后端约定：code === 0 才是成功（见 backend ResultCode.SUCCESS），非 0 都是失败
-    if (result.code === 0) {
+    // 后端约定：code === 200 才是成功（见 backend ResultCode.SUCCESS(200)），其余都是失败
+    if (result.code === 200) {
       // 只把业务数据往下传。注意：从这里开始，Promise 的值已经不是 AxiosResponse 了，
       // 所以下面的 get/post 封装里做了一次类型断言。
       return result.data as never
     }
-    // 业务失败（后端 GlobalExceptionHandler 统一返回的 code/msg）
+    // ===== 401 特殊处理：token 过期 =====
+    if (result.code === 401) {
+      // 如果是刷新 token 接口本身返回 401，说明 refresh token 也过期了，直接登出
+      const isRefreshRequest = response.config.url?.includes('/auth/refresh')
+      if (isRefreshRequest) {
+        // 清除登录态，跳转登录
+        localStorage.removeItem('token')
+        localStorage.removeItem('userInfo')
+        ElMessage.error('登录已过期，请重新登录')
+        window.location.href = '/login'
+        return Promise.reject(new Error('登录已过期'))
+      }
+
+      // 否则尝试刷新 token
+      return new Promise((resolve, reject) => {
+        // 将当前请求加入等待队列
+        pendingRequests.push({ resolve, reject, config: response.config })
+
+        // 如果已经在刷新中，不重复触发
+        if (isRefreshing) return
+
+        isRefreshing = true
+
+        // 使用 store 刷新 token
+        import('@/stores/user').then(({ useUserStore }) => {
+          const userStore = useUserStore()
+          userStore.refreshToken().then((newToken: any) => {
+            if (newToken) {
+              // 刷新成功，执行所有等待的请求
+              pendingRequests.forEach(({ resolve, config }) => {
+                // 更新请求头中的 token
+                config.headers.Authorization = `Bearer ${newToken}`
+                // 重发请求
+                resolve(instance(config))
+              })
+            } else {
+              // 刷新失败，拒绝所有等待的请求
+              pendingRequests.forEach(({ reject }) => {
+                reject(new Error('Token刷新失败'))
+              })
+              // 跳转登录页
+              ElMessage.error('登录已过期，请重新登录')
+              window.location.href = '/login'
+            }
+            // 清空等待队列
+            pendingRequests = []
+            isRefreshing = false
+          }).catch(() => {
+            // 刷新失败
+            pendingRequests.forEach(({ reject }) => {
+              reject(new Error('Token刷新失败'))
+            })
+            pendingRequests = []
+            isRefreshing = false
+            ElMessage.error('登录已过期，请重新登录')
+            window.location.href = '/login'
+          })
+        })
+      })
+    }
+
+    // 其他业务错误
     ElMessage.error(result.msg || '请求失败')
     return Promise.reject(new Error(result.msg || '请求失败'))
   },
@@ -51,26 +125,32 @@ instance.interceptors.response.use(
 )
 
 // ------------------------------------------------------------------
-// 四个泛型快捷方法。T 填「后端 data 字段的类型」，例如：
-//   get<PageResult<NewsItem>>('/news', { pageNum: 1 })
+// 四个泛型快捷方法
 // ------------------------------------------------------------------
 
-/** GET 请求，params 会拼成 query string（?a=1&b=2） */
 export function get<T>(url: string, params?: object): Promise<T> {
   return instance.get(url, { params }) as unknown as Promise<T>
 }
 
-/** POST 请求，data 以 JSON body 发送 */
 export function post<T>(url: string, data?: object): Promise<T> {
   return instance.post(url, data) as unknown as Promise<T>
 }
 
-/** PUT 请求 */
 export function put<T>(url: string, data?: object): Promise<T> {
   return instance.put(url, data) as unknown as Promise<T>
 }
 
-/** DELETE 请求（delete 是 JS 关键字，故取名 del） */
 export function del<T>(url: string): Promise<T> {
   return instance.delete(url) as unknown as Promise<T>
 }
+
+// ===== 文件上传（FormData）=====
+export function upload<T>(url: string, data: FormData): Promise<T> {
+  return instance.post(url, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  }) as unknown as Promise<T>
+}
+
+export default instance

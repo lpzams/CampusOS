@@ -1,26 +1,31 @@
 <script setup lang="ts">
 /**
- * 新闻详情页 —— 「带路由参数的读页面」示例。
- *
- * URL 形如 /news/123，123 通过 route.params.id 拿到。
- * 对应后端接口：GET /api/news/{id}（后端会顺带把浏览量 +1）。
+ * 新闻详情页 —— 展示新闻完整内容。
+ * 对应后端接口：GET /news/detail/{id}
  */
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getNewsDetail } from '@/api/news'
-import type { NewsItem } from '@/api/news'
-import { formatDateTime } from '@/utils/format'
+import type { NewsDetail } from '@/api/types'
+import { formatDateTime } from '@/utils/format'  // ✅ 改1：formatDate → formatDateTime
 
 const route = useRoute()
 const router = useRouter()
 
 const loading = ref(false)
-const news = ref<NewsItem | null>(null)
+const news = ref<NewsDetail | null>(null)
 
 onMounted(async () => {
+  const id = route.params.id
+  if (!id) return
+
   loading.value = true
   try {
-    news.value = await getNewsDetail(route.params.id as string)
+    // ✅ 改2：String(id) 确保类型正确
+    const res = await getNewsDetail(String(id))
+    if (res.code === 200 && res.data) {
+      news.value = res.data
+    }
   } finally {
     loading.value = false
   }
@@ -29,23 +34,22 @@ onMounted(async () => {
 
 <template>
   <div v-loading="loading">
-    <!-- 返回上一页（通常是列表页） -->
     <el-page-header content="新闻详情" class="page-header" @back="router.back()" />
 
     <el-card v-if="news" shadow="never">
       <h1 class="detail-title">{{ news.title }}</h1>
       <div class="detail-meta">
         <el-tag size="small">{{ news.category }}</el-tag>
-        <span>{{ news.author }}</span>
-        <span>发布于 {{ formatDateTime(news.publishedAt) }}</span>
-        <span>{{ news.viewCount }} 次浏览</span>
+        <span>✍️ {{ news.author }}</span>
+        <span>👁️ {{ news.viewCount }}</span>
+        <span>❤️ {{ news.favoriteCount }}</span>
+        <!-- ✅ 改3：formatDate → formatDateTime -->
+        <span>📅 {{ formatDateTime(news.createTime) }}</span>
       </div>
       <el-divider />
-      <!-- 正文是纯文本，pre-wrap 保留后台录入时的换行 -->
-      <div class="detail-content">{{ news.content }}</div>
+      <div class="detail-content" v-html="news.content" />
     </el-card>
 
-    <!-- 接口报错（如 id 不存在）时 news 为空，给个兜底展示 -->
     <el-empty v-else-if="!loading" description="新闻不存在或已下线" />
   </div>
 </template>
@@ -54,25 +58,28 @@ onMounted(async () => {
 .page-header {
   margin-bottom: 16px;
 }
-
 .detail-title {
   margin: 0 0 12px;
   font-size: 22px;
   color: #303133;
 }
-
 .detail-meta {
   display: flex;
   align-items: center;
   gap: 16px;
   color: #909399;
   font-size: 13px;
+  flex-wrap: wrap;
 }
-
 .detail-content {
-  white-space: pre-wrap;
   line-height: 1.8;
   color: #303133;
   font-size: 15px;
+}
+.detail-content :deep(p) {
+  margin: 0 0 12px 0;
+}
+.detail-content :deep(img) {
+  max-width: 100%;
 }
 </style>
