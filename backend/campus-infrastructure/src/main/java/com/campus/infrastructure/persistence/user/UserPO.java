@@ -33,6 +33,8 @@ public class UserPO {
     private Integer loginFailCount;
     @TableField("lock_time")
     private LocalDateTime lockTime;
+    @TableField("open_id")
+    private String openId;
     @TableField("created_time")
     private LocalDateTime createdTime;
     @TableField("updated_time")

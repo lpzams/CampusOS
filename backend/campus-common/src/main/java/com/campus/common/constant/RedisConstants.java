@@ -45,7 +45,7 @@ public final class RedisConstants {
     public static final int SMS_CODE_EXPIRE_SECONDS = 300;
 
     /** 登录 Token 过期时间：2小时 */
-    public static final int TOKEN_EXPIRE_SECONDS = 7200;
+    public static final int TOKEN_EXPIRE_HOURS = 24;
 
     /** 用户信息缓存过期时间：30分钟 */
     public static final int USER_INFO_EXPIRE_SECONDS = 1800;
@@ -71,7 +71,7 @@ public final class RedisConstants {
     public static final int SMS_RATE_LIMIT_SECONDS = 60;
 
     /** 登录失败最大次数（超过锁定） */
-    public static final int LOGIN_FAIL_MAX_COUNT = 5;
+    public static final int LOGIN_FAIL_MAX_COUNT = 10;
 
     // ========== 通用方法 ==========
 
@@ -122,5 +122,9 @@ public final class RedisConstants {
      */
     public static String getRateLimitKey(String apiPath, String ip) {
         return RATE_LIMIT_PREFIX + apiPath + ":" + ip;
+    }
+
+    public static String getUserTokenKey(Long id) {
+        return TOKEN_PREFIX + id;
     }
 }

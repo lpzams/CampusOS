@@ -27,6 +27,7 @@ public class SmsService {
     public void sendSmsCode(String phone) {
 
         // 1. 生成6位验证码
+
         String code = generateCode();
 
         // 2. 存入 Redis（5分钟过期）

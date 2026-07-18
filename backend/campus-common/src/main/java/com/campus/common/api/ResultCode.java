@@ -32,7 +32,7 @@ public enum ResultCode {
     LOGIN_EXPIRED(1013, "登录已过期，请重新登录"),
     TOKEN_INVALID(1014, "Token无效"),
     TOKEN_EXPIRED(1015, "Token已过期"),
-    ACCOUNT_LOCKED(1016, "账号已被锁定，请30分钟后重试"),
+    ACCOUNT_LOCKED(1016, "账号已被锁定，请5分钟后重试"),
     VERIFY_CODE_ERROR(1017, "验证码错误"),
     VERIFY_CODE_EXPIRED(1018, "验证码已过期"),
     WECHAT_LOGIN_FAILED(1019, "微信登录失败"),

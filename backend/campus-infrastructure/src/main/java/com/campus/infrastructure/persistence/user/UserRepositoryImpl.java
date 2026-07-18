@@ -97,4 +97,15 @@ public class UserRepositoryImpl implements UserRepository {
     public boolean existsByEmail(String email) {
         return userMapper.countByEmail(email) > 0;
     }
+
+    @Override
+    public void update(User user) {
+        UserPO po = userConverter.toUserPO(user);
+        userMapper.updateById(po);
+    }
+
+    @Override
+    public User findByOpenId(String openId) {
+        return userConverter.toUser(userMapper.selectByOpenId(openId));
+    }
 }

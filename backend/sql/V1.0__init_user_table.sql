@@ -16,6 +16,7 @@ CREATE TABLE t_user (
                         last_login_ip VARCHAR(50) COMMENT '最后登录IP',
                         login_fail_count INT DEFAULT 0 COMMENT '登录失败次数',
                         lock_time DATETIME COMMENT '锁定时间',
+                        open_id VARCHAR(64) COMMENT '微信openId',
                         created_time DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '注册时间',
                         updated_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
                         deleted TINYINT DEFAULT 0 COMMENT '逻辑删除：0-未删除 1-已删除'

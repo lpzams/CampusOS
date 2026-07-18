@@ -6,6 +6,9 @@ server:
 spring:
   application:
     name: campus-portal
+  # ===== 激活 Mock 微信模式（开发测试用，上线前注释掉） =====
+  profiles:
+    active: mock-wechat
   # ===== 数据源：改成你自己的库名 / 账号 / 密码 =====
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -36,6 +39,41 @@ mybatis-plus:
       logic-delete-field: deleted
       logic-delete-value: 1
       logic-not-delete-value: 0
+
+# ===== JWT =====
+jwt:
+  # 密钥（至少256位），生产环境请更换为更安全的密钥
+  secret: CampusOS-SecretKey-2024-Must-Be-At-Least-256-Bits-Long!!
+  # Token 过期时间（毫秒），默认2小时
+  expiration: 7200000
+
+# ===== 安全配置 =====
+security:
+  # 白名单路径（不需要登录即可访问，支持 Ant 风格通配符）
+  whitelist:
+    - /api/user/login
+    - /api/user/login/sms
+    - /api/user/login/**
+    - /api/user/register
+    - /api/user/sms/send
+    - /api/user/forgot-password
+    - /swagger-ui/**
+    - /v3/api-docs/**
+    - /doc.html
+    - /webjars/**
+
+# ===== 微信 =====
+# 测试模式说明：
+#   当 spring.profiles.active 包含 mock-wechat 时，MockWechatApiClient 生效，
+#   直接将请求中的 code 字段作为 openId 使用，无需真实微信API。
+#   上线前移除 mock-wechat profile 即可切换到真实微信API调用。
+wechat:
+  # 小程序/公众号 AppID（生产环境请替换为实际值，mock模式忽略）
+  app-id: wx1234567890
+  # 小程序/公众号 AppSecret（生产环境请替换为实际值，mock模式忽略）
+  app-secret: your_app_secret_here
+  # 类型：miniprogram-小程序 / official-公众号H5
+  type: miniprogram
 
 # ===== 日志 =====
 logging:

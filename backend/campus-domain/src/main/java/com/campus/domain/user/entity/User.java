@@ -24,6 +24,7 @@ public class User {
     private String lastLoginIp;
     private Integer loginFailCount;
     private LocalDateTime lockTime;
+    private String openId;
     private LocalDateTime createdTime;
     private LocalDateTime updatedTime;
 
@@ -93,6 +94,37 @@ public class User {
         user.setCreatedTime(LocalDateTime.now());
         user.setUpdatedTime(LocalDateTime.now());
         return user;
+    }
+
+    /**
+     * 微信授权登录 — 首次登录自动注册
+     * <p>
+     * 规则：通过微信 openId 创建用户，无需密码，无需手机号审核
+     */
+    public static User createForWechat(String openId, String nickName, String avatarUrl) {
+        User user = new User();
+        user.setUsername("wx_" + openId.substring(Math.max(0, openId.length() - 12)));
+        user.setPasswordHash(null);  // 微信用户无密码
+        user.setRealName(nickName != null ? nickName : "微信用户");
+        user.setAvatar(avatarUrl);
+        user.setUserType(1);  // 默认学生
+        user.setDepartment("");
+        user.setOpenId(openId);
+        user.setStatus(0);  // 正常
+        user.setIsVerified(0);
+        user.setLoginFailCount(0);
+        user.setGender(0);
+        user.setCreatedTime(LocalDateTime.now());
+        user.setUpdatedTime(LocalDateTime.now());
+        return user;
+    }
+
+    /**
+     * 绑定微信 openId
+     */
+    public void bindWechat(String openId) {
+        this.openId = openId;
+        this.updatedTime = LocalDateTime.now();
     }
 
     // ========== 业务规则 ==========
@@ -175,7 +207,7 @@ public class User {
      */
     public void checkLock() {
         if (this.lockTime != null) {
-            LocalDateTime unlockTime = this.lockTime.plusMinutes(30);
+            LocalDateTime unlockTime = this.lockTime.plusMinutes(5);
             if (LocalDateTime.now().isBefore(unlockTime)) {
                 long minutes = java.time.Duration.between(LocalDateTime.now(), unlockTime).toMinutes();
                 throw new BusinessException("账号已被锁定，请 " + minutes + " 分钟后重试");

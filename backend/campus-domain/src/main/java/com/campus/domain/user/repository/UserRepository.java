@@ -23,4 +23,8 @@ public interface UserRepository {
     boolean existsByPhone(String phone);
 
     boolean existsByEmail(String email);
+
+    void update(User user);
+
+    User findByOpenId(String openId);
 }

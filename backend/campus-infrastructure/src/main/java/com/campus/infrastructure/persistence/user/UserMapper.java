@@ -25,4 +25,7 @@ public interface UserMapper extends BaseMapper<UserPO> {
 
     @Select("SELECT COUNT(*) FROM t_user WHERE email = #{email} AND deleted = 0")
     int countByEmail(@Param("email") String email);
+
+    @Select("SELECT * FROM t_user WHERE open_id = #{openId} AND deleted = 0")
+    UserPO selectByOpenId(@Param("openId") String openId);
 }
