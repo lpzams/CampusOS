@@ -62,6 +62,11 @@ security:
     - /api/user/register
     - /api/user/sms/send
     - /api/user/forgot-password
+    - /api/news/list
+    - /api/news/detail/**
+    - /api/news/categories
+    - /api/notice/list
+    - /api/notice/detail/**
     - /swagger-ui/**
     - /v3/api-docs/**
     - /doc.html
