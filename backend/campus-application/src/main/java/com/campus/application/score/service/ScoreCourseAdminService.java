@@ -19,7 +19,7 @@ import java.util.*;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CourseAdminService {
+public class ScoreCourseAdminService {
 
     private final CourseRepository courseRepository;
     private final UserRepository userRepository;

@@ -4,12 +4,11 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
-import org.apache.ibatis.annotations.Update;
 
 import java.util.List;
 
 @Mapper
-public interface CourseMapper extends BaseMapper<CoursePO> {
+public interface ScoreCourseMapper extends BaseMapper<CoursePO> {
 
     /**
      * 按教师ID和学期查课程

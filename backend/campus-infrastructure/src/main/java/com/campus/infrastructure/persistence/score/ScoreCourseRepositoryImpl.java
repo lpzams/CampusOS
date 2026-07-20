@@ -11,9 +11,9 @@ import java.util.List;
 @Slf4j
 @Repository
 @RequiredArgsConstructor
-public class CourseRepositoryImpl implements CourseRepository {
+public class ScoreCourseRepositoryImpl implements CourseRepository {
 
-    private final CourseMapper courseMapper;
+    private final ScoreCourseMapper courseMapper;
     private final ScoreConverter scoreConverter;
 
     @Override

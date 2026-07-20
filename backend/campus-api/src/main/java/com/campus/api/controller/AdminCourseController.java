@@ -1,6 +1,6 @@
 package com.campus.api.controller;
 
-import com.campus.application.score.service.CourseAdminService;
+import com.campus.application.score.service.ScoreCourseAdminService;
 import com.campus.common.api.PageResult;
 import com.campus.common.api.Result;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,7 +18,7 @@ import java.util.Map;
 @Tag(name = "课程管理", description = "管理员课程创建、更新、删除、列表相关接口")
 public class AdminCourseController {
 
-    private final CourseAdminService courseAdminService;
+    private final ScoreCourseAdminService courseAdminService;
 
     // ==================== 5.5 创建课程（管理员） ====================
 
