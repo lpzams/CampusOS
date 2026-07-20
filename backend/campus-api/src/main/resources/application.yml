@@ -71,6 +71,11 @@ security:
     - /api/classroom/all
     - /api/classroom/all
     - /api/classroom/free
+    - /api/product/list
+    - /api/product/detail/**
+    - /api/activity/list
+    - /api/activity/detail/**
+    - /api/location/**
     - /swagger-ui/**
     - /v3/api-docs/**
     - /doc.html

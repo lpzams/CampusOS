@@ -210,4 +210,17 @@ public class UserRepositoryImpl implements UserRepository {
         if (userCacheService.getUserIdByEmail(email) != null) return true;
         return userMapper.countByEmail(email) > 0;
     }
+
+    // ==================== 管理员查询（不走缓存） ====================
+
+    @Override
+    public java.util.List<User> findUsers(String keyword, Integer status, Integer userType, int offset, int size) {
+        return userMapper.selectPage(keyword, status, userType, offset, size)
+                .stream().map(userConverter::toUser).collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    public long countUsers(String keyword, Integer status, Integer userType) {
+        return userMapper.countPage(keyword, status, userType);
+    }
 }

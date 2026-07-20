@@ -28,4 +28,27 @@ public interface UserMapper extends BaseMapper<UserPO> {
 
     @Select("SELECT * FROM t_user WHERE open_id = #{openId} AND deleted = 0")
     UserPO selectByOpenId(@Param("openId") String openId);
+
+    @Select("<script>SELECT * FROM t_user WHERE deleted = 0 " +
+            "<if test='keyword != null and keyword != \"\"'> " +
+            " AND (username LIKE CONCAT('%', #{keyword}, '%') OR real_name LIKE CONCAT('%', #{keyword}, '%')) " +
+            "</if>" +
+            "<if test='status != null'> AND status = #{status} </if>" +
+            "<if test='userType != null'> AND user_type = #{userType} </if>" +
+            "ORDER BY created_time DESC LIMIT #{offset}, #{size}</script>")
+    java.util.List<UserPO> selectPage(@Param("keyword") String keyword,
+                                      @Param("status") Integer status,
+                                      @Param("userType") Integer userType,
+                                      @Param("offset") int offset,
+                                      @Param("size") int size);
+
+    @Select("<script>SELECT COUNT(*) FROM t_user WHERE deleted = 0 " +
+            "<if test='keyword != null and keyword != \"\"'> " +
+            " AND (username LIKE CONCAT('%', #{keyword}, '%') OR real_name LIKE CONCAT('%', #{keyword}, '%')) " +
+            "</if>" +
+            "<if test='status != null'> AND status = #{status} </if>" +
+            "<if test='userType != null'> AND user_type = #{userType} </if></script>")
+    long countPage(@Param("keyword") String keyword,
+                   @Param("status") Integer status,
+                   @Param("userType") Integer userType);
 }

@@ -61,4 +61,11 @@ public class UserProfileRepositoryImpl implements UserProfileRepository {
             userCacheService.evictProfile(profile.getUserId());
         }
     }
+
+    @Override
+    public java.util.List<UserProfile> findByUserIds(java.util.List<Long> userIds) {
+        if (userIds == null || userIds.isEmpty()) return java.util.Collections.emptyList();
+        return userProfileMapper.selectByUserIds(userIds)
+                .stream().map(userConverter::toUserProfile).collect(java.util.stream.Collectors.toList());
+    }
 }

@@ -9,4 +9,6 @@ public interface UserProfileRepository {
     UserProfile findByUserId(Long userId);
 
     void update(UserProfile profile);
+
+    java.util.List<UserProfile> findByUserIds(java.util.List<Long> userIds);
 }
