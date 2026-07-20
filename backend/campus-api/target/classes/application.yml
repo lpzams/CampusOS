@@ -67,6 +67,10 @@ security:
     - /api/news/categories
     - /api/notice/list
     - /api/notice/detail/**
+    - /api/course/teacher/**
+    - /api/classroom/all
+    - /api/classroom/all
+    - /api/classroom/free
     - /swagger-ui/**
     - /v3/api-docs/**
     - /doc.html
