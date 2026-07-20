@@ -1,5 +1,7 @@
 package com.campus.api.controller;
 
+import com.campus.application.course.dto.CourseStatisticsDTO;
+import com.campus.application.course.service.CourseAppService;
 import com.campus.application.score.service.ScoreCourseAdminService;
 import com.campus.common.api.PageResult;
 import com.campus.common.api.Result;
@@ -19,6 +21,7 @@ import java.util.Map;
 public class AdminCourseController {
 
     private final ScoreCourseAdminService courseAdminService;
+    private final CourseAppService courseAppService;
 
     // ==================== 5.5 创建课程（管理员） ====================
 
@@ -39,7 +42,19 @@ public class AdminCourseController {
         return Result.success(courseAdminService.updateCourse(id, command));
     }
 
-    // ==================== 5.7 删除课程（管理员） ====================
+    // ==================== 5.7 分配教师课程（管理员） ====================
+
+    @PostMapping("/assign")
+    @Operation(summary = "分配教师课程（管理员）")
+    public Result<Map<String, Object>> assignTeacher(@RequestBody Map<String, Object> command) {
+        Long courseId = command.get("courseId") != null ? ((Number) command.get("courseId")).longValue() : null;
+        Long teacherId = command.get("teacherId") != null ? ((Number) command.get("teacherId")).longValue() : null;
+        String semester = (String) command.get("semester");
+        log.info("分配教师课程: courseId={}, teacherId={}, semester={}", courseId, teacherId, semester);
+        return Result.success(courseAdminService.assignTeacher(courseId, teacherId, semester));
+    }
+
+    // ==================== 5.8 删除课程（管理员） ====================
 
     @DeleteMapping("/{id}")
     @Operation(summary = "删除课程（管理员）")
@@ -60,5 +75,14 @@ public class AdminCourseController {
             @RequestParam(defaultValue = "10") int size) {
         log.info("获取课程列表: semester={}, keyword={}, page={}, size={}", semester, keyword, page, size);
         return Result.success(courseAdminService.getCourseList(semester, keyword, page, size));
+    }
+
+    // ==================== 5.C6 选课统计（管理员） ====================
+
+    @GetMapping("/{id}/statistics")
+    @Operation(summary = "选课统计（管理员）")
+    public Result<CourseStatisticsDTO> getCourseStatistics(@PathVariable Long id) {
+        log.info("选课统计: courseId={}", id);
+        return Result.success(courseAppService.getCourseStatistics(id));
     }
 }

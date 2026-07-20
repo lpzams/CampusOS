@@ -100,7 +100,50 @@ public class ScoreCourseAdminService {
         return response;
     }
 
-    // ==================== 5.7 删除课程（管理员） ====================
+    // ==================== 5.7 分配教师课程（管理员） ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public Map<String, Object> assignTeacher(Long courseId, Long teacherId, String semester) {
+        // 1. 校验管理员权限
+        Long userId = UserAppService.getCurrentUserId();
+        User currentUser = userRepository.findById(userId);
+        if (currentUser == null || !currentUser.isAdmin()) {
+            throw new BusinessException(ResultCode.PERMISSION_DENIED);
+        }
+
+        // 2. 校验课程存在
+        Course course = courseRepository.findById(courseId);
+        if (course == null) {
+            throw new BusinessException(ResultCode.COURSE_NOT_FOUND);
+        }
+
+        // 3. 校验教师存在
+        User teacher = userRepository.findById(teacherId);
+        if (teacher == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 4. 校验学期
+        if (semester != null && !semester.isBlank() && !semester.equals(course.getSemester())) {
+            throw new BusinessException("课程学期与指定学期不匹配");
+        }
+
+        // 5. 分配教师
+        course.setTeacherId(teacherId);
+        course.setTeacherName(teacher.getRealName());
+        course.setUpdateTime(java.time.LocalDateTime.now());
+        courseRepository.update(course);
+
+        log.info("教师分配成功: courseId={}, teacherId={}, teacherName={}", courseId, teacherId, teacher.getRealName());
+
+        Map<String, Object> response = new LinkedHashMap<>();
+        response.put("courseId", course.getId());
+        response.put("teacherId", teacher.getId());
+        response.put("teacherName", teacher.getRealName());
+        return response;
+    }
+
+    // ==================== 5.8 删除课程（管理员） ====================
 
     @Transactional(rollbackFor = Exception.class)
     public void deleteCourse(Long id) {
