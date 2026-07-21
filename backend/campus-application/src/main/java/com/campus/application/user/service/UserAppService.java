@@ -1,11 +1,7 @@
 package com.campus.application.user.service;
 
-import com.campus.application.user.command.ForgotPasswordCommand;
-import com.campus.application.user.command.LoginCommand;
-import com.campus.application.user.command.RegisterCommand;
-import com.campus.application.user.command.SmsLoginCommand;
-import com.campus.application.user.command.WechatLoginCommand;
-import com.campus.application.user.dto.LoginResponseDTO;
+import com.campus.application.user.command.*;
+import com.campus.application.user.dto.*;
 import com.campus.common.api.ResultCode;
 import com.campus.common.constant.RedisConstants;
 import com.campus.common.constant.UserConstants;
@@ -15,6 +11,7 @@ import com.campus.common.exception.BusinessException;
 import com.campus.domain.user.entity.User;
 import com.campus.domain.user.entity.UserProfile;
 import com.campus.domain.user.entity.UserRole;
+import com.campus.domain.user.repository.UserProfileRepository;
 import com.campus.domain.user.repository.UserRepository;
 import com.campus.infrastructure.util.JwtUtil;
 import com.campus.infrastructure.util.PasswordEncoder;
@@ -41,6 +38,7 @@ public class UserAppService {
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
     private final WechatApiClient wechatApiClient;
+    private final UserProfileRepository userProfileRepository;
 
     // ==================== 注册 ====================
 
@@ -85,6 +83,7 @@ public class UserAppService {
         if (user.getUserType() == UserConstants.TYPE_STUDENT) {
             profile = UserProfile.createStudent(
                     null,
+                    command.getUsername(),
                     command.getMajor(),
                     command.getClassName(),
                     command.getEnrollmentYear()
@@ -274,7 +273,334 @@ public class UserAppService {
         log.info("密码重置成功: userId={}, username={}", user.getId(), user.getUsername());
     }
 
+    // ==================== 2.1 获取个人信息 ====================
+
+    public UserProfileDTO getProfile(Long userId) {
+        // 1. 查 User（Cache-Aside）
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 2. 查 Profile（Cache-Aside）
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+
+        // 3. 拼装返回
+        return UserProfileDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .gender(genderToString(user.getGender()))
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .userType(user.getUserType())
+                .department(user.getDepartment())
+                .major(profile != null ? profile.getMajor() : null)
+                .className(profile != null ? profile.getClassName() : null)
+                .studentId(profile != null ? profile.getStudentId() : null)
+                .enrollmentYear(profile != null ? profile.getEnrollmentYear() : null)
+                .status(user.getStatus())
+                .createdTime(user.getCreatedTime() != null ? user.getCreatedTime().toString() : null)
+                .build();
+    }
+
+    // ==================== 2.2 修改个人信息（含头像） ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public UserProfileDTO updateProfile(Long userId, UpdateProfileCommand command) {
+        // 1. 查用户
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 2. 手机号唯一性校验（如果修改了手机号）
+        if (command.getPhone() != null && !command.getPhone().equals(user.getPhone())) {
+            if (userRepository.existsByPhone(command.getPhone())) {
+                throw new BusinessException(ResultCode.PHONE_EXISTS);
+            }
+            user.setPhone(command.getPhone());
+        }
+
+        // 3. 邮箱唯一性校验（如果修改了邮箱）
+        if (command.getEmail() != null && !command.getEmail().equals(user.getEmail())) {
+            if (userRepository.existsByEmail(command.getEmail())) {
+                throw new BusinessException(ResultCode.EMAIL_EXISTS);
+            }
+            user.setEmail(command.getEmail());
+        }
+
+        // 4. 更新基本信息（含头像）
+        if (command.getRealName() != null) {
+            user.setRealName(command.getRealName());
+        }
+        if (command.getGender() != null) {
+            user.setGender(command.getGender());
+        }
+        if (command.getAvatar() != null) {
+            user.setAvatar(command.getAvatar());
+        }
+
+        // 5. 写 DB → 自动删缓存（Cache-Aside Write）
+        userRepository.update(user);
+
+        // 6. 查 Profile 拼完整响应
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+
+        log.info("个人信息修改成功: userId={}", userId);
+        return UserProfileDTO.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .realName(user.getRealName())
+                .gender(genderToString(user.getGender()))
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .userType(user.getUserType())
+                .department(user.getDepartment())
+                .major(profile != null ? profile.getMajor() : null)
+                .className(profile != null ? profile.getClassName() : null)
+                .studentId(profile != null ? profile.getStudentId() : null)
+                .enrollmentYear(profile != null ? profile.getEnrollmentYear() : null)
+                .status(user.getStatus())
+                .createdTime(user.getCreatedTime() != null ? user.getCreatedTime().toString() : null)
+                .updatedTime(user.getUpdatedTime() != null ? user.getUpdatedTime().toString() : null)
+                .build();
+    }
+
+    // ==================== 2.4 获取学生详细信息 ====================
+
+    public StudentDetailDTO getStudentDetail(Long userId) {
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+        if (!user.isStudent()) {
+            throw new BusinessException("仅学生可访问此接口");
+        }
+
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+
+        return StudentDetailDTO.builder()
+                .userId(user.getId())
+                .studentId(profile != null ? profile.getStudentId() : null)
+                .realName(user.getRealName())
+                .gender(genderToString(user.getGender()))
+                .department(user.getDepartment())
+                .major(profile != null ? profile.getMajor() : null)
+                .className(profile != null ? profile.getClassName() : null)
+                .enrollmentYear(profile != null ? profile.getEnrollmentYear() : null)
+                .dormitory(profile != null ? profile.getDormitory() : null)
+                .advisor(profile != null ? profile.getAdvisor() : null)
+                .build();
+    }
+
+    // ==================== 2.5 获取教师详细信息 ====================
+
+    public TeacherDetailDTO getTeacherDetail(Long userId) {
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+        if (!user.isTeacher()) {
+            throw new BusinessException("仅教师可访问此接口");
+        }
+
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+
+        return TeacherDetailDTO.builder()
+                .userId(user.getId())
+                .teacherId(profile != null ? profile.getTeacherId() : null)
+                .realName(user.getRealName())
+                .gender(genderToString(user.getGender()))
+                .department(user.getDepartment())
+                .title(profile != null ? profile.getTitle() : null)
+                .office(profile != null ? profile.getOffice() : null)
+                .phone(user.getPhone())
+                .email(user.getEmail())
+                .researchArea(profile != null ? profile.getResearchDirection() : null)
+                .introduction(profile != null ? profile.getIntroduction() : null)
+                .build();
+    }
+
+    // ==================== 2.8 修改学生详细信息 ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public StudentProfileDTO updateStudentProfile(Long userId, UpdateStudentProfileCommand command) {
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+        if (!user.isStudent()) {
+            throw new BusinessException("仅学生可修改此信息");
+        }
+
+        // 获取或创建 Profile
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+        if (profile == null) {
+            profile = new UserProfile();
+            profile.setUserId(userId);
+        }
+
+        // Domain 层更新
+        profile.updateStudentInfo(command.getMajor(), command.getClassName(),
+                command.getEnrollmentYear(), command.getDormitory(), command.getAdvisor());
+
+        if (profile.getId() == null) {
+            userProfileRepository.save(profile);
+        } else {
+            userProfileRepository.update(profile);
+        }
+
+        log.info("学生信息修改成功: userId={}", userId);
+
+        return StudentProfileDTO.builder()
+                .userId(userId)
+                .studentId(profile.getStudentId())
+                .major(profile.getMajor())
+                .className(profile.getClassName())
+                .enrollmentYear(profile.getEnrollmentYear())
+                .dormitory(profile.getDormitory())
+                .advisor(profile.getAdvisor())
+                .build();
+    }
+
+    // ==================== 2.9 修改教师详细信息 ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public TeacherProfileDTO updateTeacherProfile(Long userId, UpdateTeacherProfileCommand command) {
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+        if (!user.isTeacher()) {
+            throw new BusinessException("仅教师可修改此信息");
+        }
+
+        // 获取或创建 Profile
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+        if (profile == null) {
+            profile = new UserProfile();
+            profile.setUserId(userId);
+        }
+
+        // Domain 层更新
+        profile.updateTeacherInfo(command.getTitle(), command.getResearchDirection(),
+                command.getOffice(), command.getIntroduction());
+
+        if (profile.getId() == null) {
+            userProfileRepository.save(profile);
+        } else {
+            userProfileRepository.update(profile);
+        }
+
+        log.info("教师信息修改成功: userId={}", userId);
+
+        return TeacherProfileDTO.builder()
+                .userId(userId)
+                .teacherId(profile.getTeacherId())
+                .title(profile.getTitle())
+                .researchDirection(profile.getResearchDirection())
+                .office(profile.getOffice())
+                .introduction(profile.getIntroduction())
+                .build();
+    }
+
+    // ==================== 2.6 实名认证 ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public VerifyResponseDTO submitVerify(Long userId, VerifyCommand command) {
+        // 1. 查 User
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 2. 获取或创建 Profile
+        UserProfile profile = userProfileRepository.findByUserId(userId);
+        if (profile == null) {
+            profile = new UserProfile();
+            profile.setUserId(userId);
+        }
+
+        // 3. 提交认证（Domain 层校验状态）
+        profile.submitVerify(command.getRealName(), command.getIdCard(),
+                command.getIdCardFront(), command.getIdCardBack(),
+                profile.getStudentId());
+
+        // 4. 保存 → 自动删缓存
+        if (profile.getId() == null) {
+            userProfileRepository.save(profile);
+        } else {
+            userProfileRepository.update(profile);
+        }
+
+        // 5. 同步更新 User 实名认证标识
+        user.setIsVerified(1);  // 审核中
+        user.setRealName(command.getRealName());
+        userRepository.update(user);
+
+        log.info("实名认证提交成功: userId={}, realName={}", userId, command.getRealName());
+
+        // 6. 返回
+        String expectTime = java.time.LocalDateTime.now().plusDays(3)
+                .format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        return VerifyResponseDTO.builder()
+                .verifyId(profile.getId())
+                .status("PENDING")
+                .statusDesc("审核中")
+                .submitTime(profile.getUpdatedTime() != null ? profile.getUpdatedTime().toString() : null)
+                .expectedFinishTime(expectTime)
+                .build();
+    }
+
+    // ==================== 2.7 修改密码 ====================
+
+    @Transactional(rollbackFor = Exception.class)
+    public void changePassword(Long userId, ChangePasswordCommand command) {
+        // 1. 查用户
+        User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_EXIST);
+        }
+
+        // 2. 校验旧密码
+        if (user.getPasswordHash() == null) {
+            throw new BusinessException("当前账号无密码，无法修改（请使用微信登录后设置密码）");
+        }
+        if (!passwordEncoder.matches(command.getOldPassword(), user.getPasswordHash())) {
+            throw new BusinessException(ResultCode.OLD_PASSWORD_ERROR);
+        }
+
+        // 3. 新密码不能与旧密码相同
+        if (passwordEncoder.matches(command.getNewPassword(), user.getPasswordHash())) {
+            throw new BusinessException(ResultCode.NEW_PASSWORD_SAME);
+        }
+
+        // 4. 更新密码
+        String encodedPassword = passwordEncoder.encode(command.getNewPassword());
+        user.resetPassword(encodedPassword);
+        userRepository.update(user);
+
+        // 5. 清除该用户所有 Token（强制重新登录）
+        clearUserTokens(userId);
+
+        log.info("密码修改成功: userId={}", userId);
+    }
+
     // ==================== 私有辅助方法 ====================
+
+    /**
+     * 从 ThreadLocal 获取当前登录用户 ID
+     */
+    public static Long getCurrentUserId() {
+        LoginUser loginUser = LoginUserHolder.get();
+        if (loginUser == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED);
+        }
+        return loginUser.getUserId();
+    }
 
     /**
      * 检查 Redis 中的登录失败次数
@@ -308,6 +634,18 @@ public class UserAppService {
     }
 
     /**
+     * 性别 int → 中文
+     */
+    private String genderToString(Integer gender) {
+        if (gender == null) return "未知";
+        return switch (gender) {
+            case 1 -> "男";
+            case 2 -> "女";
+            default -> "未知";
+        };
+    }
+
+    /**
      * 清除用户所有 Token（密码重置、强制下线等场景）
      */
     private void clearUserTokens(Long userId) {
@@ -322,28 +660,25 @@ public class UserAppService {
 
     /**
      * 构建登录响应：生成 JWT → 存入 Redis → 组装 DTO
+     * <p>
+     * 每次登录都生成全新 JWT，旧的 user→token 映射自动清除。
+     * JWT 内部 exp 不可变，不能复用旧 token 仅刷新 Redis TTL。
      */
     private LoginResponseDTO buildLoginResponse(User user) {
-        String tokenKey = RedisConstants.getUserTokenKey(user.getId());
+        String userTokenKey = RedisConstants.getUserTokenKey(user.getId());
 
-        // 1. 先检查 Redis 中是否存在该用户的 token
-        String existingToken = stringRedisTemplate.opsForValue().get(tokenKey);
-
-        String token;
-        if (existingToken != null) {
-            // 存在：复用已有 token，刷新过期时间
-            token = existingToken;
-            String tokenKeyWithPrefix = RedisConstants.getTokenKey(token);
-            stringRedisTemplate.expire(tokenKeyWithPrefix, RedisConstants.TOKEN_EXPIRE_HOURS, TimeUnit.HOURS);
-            stringRedisTemplate.expire(tokenKey, RedisConstants.TOKEN_EXPIRE_HOURS, TimeUnit.HOURS);
-            log.info("Token 已存在，刷新过期时间: userId={}, token={}", user.getId(), token);
-        } else {
-            // 不存在：生成新 token
-            token = jwtUtil.generateToken(user.getId(), user.getUsername());
-            log.info("生成新 Token: userId={}, token={}", user.getId(), token);
+        // 1. 清除旧的 user→token 映射（如果存在），防止旧 token 残留
+        String oldToken = stringRedisTemplate.opsForValue().get(userTokenKey);
+        if (oldToken != null) {
+            stringRedisTemplate.delete(RedisConstants.getTokenKey(oldToken));
+            log.debug("清除旧 Token: userId={}", user.getId());
         }
 
-        // 2. 构建 LoginUser 并序列化为 JSON 存入 Redis
+        // 2. 生成全新 JWT
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername());
+        log.info("生成新 Token: userId={}, token={}", user.getId(), token);
+
+        // 3. 构建 LoginUser 并序列化为 JSON 存入 Redis
         LoginUser loginUser = LoginUser.of(
                 user.getId(),
                 user.getUsername(),
@@ -355,18 +690,17 @@ public class UserAppService {
         try {
             String userJson = objectMapper.writeValueAsString(loginUser);
 
-            // 存储 token → user 的映射
-            String tokenKeyWithPrefix = RedisConstants.getTokenKey(token);
+            // 存储 token → user 的映射（AuthInterceptor 校验用）
             stringRedisTemplate.opsForValue().set(
-                    tokenKeyWithPrefix,
+                    RedisConstants.getTokenKey(token),
                     userJson,
                     RedisConstants.TOKEN_EXPIRE_HOURS,
                     TimeUnit.HOURS
             );
 
-            // 存储 user → token 的映射（用于快速查找用户当前 token）
+            // 存储 user → token 的映射（用于登出/强制下线等场景）
             stringRedisTemplate.opsForValue().set(
-                    tokenKey,
+                    userTokenKey,
                     token,
                     RedisConstants.TOKEN_EXPIRE_HOURS,
                     TimeUnit.HOURS

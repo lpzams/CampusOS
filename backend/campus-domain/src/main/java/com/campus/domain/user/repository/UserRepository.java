@@ -27,4 +27,8 @@ public interface UserRepository {
     void update(User user);
 
     User findByOpenId(String openId);
+
+    java.util.List<User> findUsers(String keyword, Integer status, Integer userType, int offset, int size);
+
+    long countUsers(String keyword, Integer status, Integer userType);
 }

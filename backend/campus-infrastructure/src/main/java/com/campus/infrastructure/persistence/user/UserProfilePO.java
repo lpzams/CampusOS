@@ -24,6 +24,10 @@ public class UserProfilePO {
     private String title;
     @TableField("research_direction")
     private String researchDirection;
+    private String dormitory;
+    private String advisor;
+    private String office;
+    private String introduction;
     @TableField("id_card")
     private String idCard;
     @TableField("id_card_front")

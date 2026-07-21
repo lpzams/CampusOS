@@ -53,7 +53,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         // 1. 校验 JWT 签名
         if (!jwtUtil.validateToken(token)) {
-            log.debug("JWT 签名校验失败: token={}", token.substring(0, Math.min(16, token.length())));
+            log.debug("JWT 签名校验失败: token={}", maskToken(token));
             write401(response, ResultCode.TOKEN_INVALID);
             return false;
         }
@@ -62,7 +62,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         String tokenKey = RedisConstants.getTokenKey(token);
         String userJson = stringRedisTemplate.opsForValue().get(tokenKey);
         if (userJson == null || userJson.isEmpty()) {
-            log.debug("Redis 中不存在 Token: {}", token.substring(0, Math.min(16, token.length())));
+            log.debug("Redis 中不存在 Token: {}", maskToken(token));
             write401(response, ResultCode.TOKEN_EXPIRED);
             return false;
         }
@@ -100,6 +100,16 @@ public class AuthInterceptor implements HandlerInterceptor {
             return header.substring(BEARER_PREFIX.length());
         }
         return null;
+    }
+
+    /**
+     * Token 脱敏：首20位...末10位，兼顾调试与安全
+     */
+    private String maskToken(String token) {
+        if (token == null || token.length() <= 34) {
+            return token;  // 短 token 直接输出（异常情况）
+        }
+        return token.substring(0, 20) + "..." + token.substring(token.length() - 10);
     }
 
     /**

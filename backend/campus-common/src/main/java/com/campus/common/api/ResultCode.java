@@ -77,6 +77,12 @@ public enum ResultCode {
     SCORE_NOT_FOUND(1501, "成绩不存在"),
     SCORE_SEMESTER_INVALID(1502, "学期无效"),
     GPA_CALCULATE_FAILED(1503, "GPA计算失败"),
+    SCORE_INVALID(1504, "成绩必须在0-100之间"),
+    SCORE_ALREADY_EXISTS(1505, "该学生该类型成绩已存在"),
+    SCORE_UPDATE_REASON_REQUIRED(1506, "成绩修改需要填写原因"),
+    SCORE_TYPE_INVALID(1507, "成绩类型不合法"),
+    SCORE_ACCESS_DENIED(1508, "无权操作该课程成绩"),
+    SCORE_EXPORT_FAILED(1509, "成绩导出失败"),
 
     // ===== 7. 考试安排模块 (1600-1699) =====
     EXAM_NOT_FOUND(1601, "考试安排不存在"),
