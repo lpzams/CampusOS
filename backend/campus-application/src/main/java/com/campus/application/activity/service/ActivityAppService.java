@@ -195,6 +195,9 @@ public class ActivityAppService {
         }
 
         // 验证签到码
+        if (registration.getCheckinCode() == null) {
+            throw new BusinessException(ResultCode.ACTIVITY_CHECKIN_FAILED.getCode(), "签到码未生成");
+        }
         if (!registration.getCheckinCode().equalsIgnoreCase(code)) {
             throw new BusinessException(ResultCode.ACTIVITY_CHECKIN_FAILED.getCode(), "签到码错误");
         }

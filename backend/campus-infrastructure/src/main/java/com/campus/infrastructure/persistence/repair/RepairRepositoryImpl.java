@@ -16,12 +16,12 @@ public class RepairRepositoryImpl implements RepairRepository {
     private final RepairProgressMapper progressMapper;
     private final RepairEvaluationMapper evaluationMapper;
 
-    private Repair toRepair(RepairPO po) { Repair r = new Repair(); BeanUtils.copyProperties(po, r); return r; }
-    private RepairPO toPO(Repair r) { RepairPO po = new RepairPO(); BeanUtils.copyProperties(r, po); return po; }
-    private RepairProgress toProgress(RepairProgressPO po) { RepairProgress p = new RepairProgress(); BeanUtils.copyProperties(po, p); return p; }
-    private RepairProgressPO toProgressPO(RepairProgress p) { RepairProgressPO po = new RepairProgressPO(); BeanUtils.copyProperties(p, po); return po; }
-    private RepairEvaluation toEval(RepairEvaluationPO po) { RepairEvaluation e = new RepairEvaluation(); BeanUtils.copyProperties(po, e); return e; }
-    private RepairEvaluationPO toEvalPO(RepairEvaluation e) { RepairEvaluationPO po = new RepairEvaluationPO(); BeanUtils.copyProperties(e, po); return po; }
+    private Repair toRepair(RepairPO po) { if (po == null) return null; Repair r = new Repair(); BeanUtils.copyProperties(po, r); return r; }
+    private RepairPO toPO(Repair r) { if (r == null) return null; RepairPO po = new RepairPO(); BeanUtils.copyProperties(r, po); return po; }
+    private RepairProgress toProgress(RepairProgressPO po) { if (po == null) return null; RepairProgress p = new RepairProgress(); BeanUtils.copyProperties(po, p); return p; }
+    private RepairProgressPO toProgressPO(RepairProgress p) { if (p == null) return null; RepairProgressPO po = new RepairProgressPO(); BeanUtils.copyProperties(p, po); return po; }
+    private RepairEvaluation toEval(RepairEvaluationPO po) { if (po == null) return null; RepairEvaluation e = new RepairEvaluation(); BeanUtils.copyProperties(po, e); return e; }
+    private RepairEvaluationPO toEvalPO(RepairEvaluation e) { if (e == null) return null; RepairEvaluationPO po = new RepairEvaluationPO(); BeanUtils.copyProperties(e, po); return po; }
 
     @Override public void save(Repair repair) { RepairPO po = toPO(repair); repairMapper.insert(po); repair.setId(po.getId()); }
     @Override public void update(Repair repair) { repairMapper.updateById(toPO(repair)); }

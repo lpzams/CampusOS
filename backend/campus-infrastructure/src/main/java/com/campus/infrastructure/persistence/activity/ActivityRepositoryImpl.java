@@ -18,10 +18,10 @@ public class ActivityRepositoryImpl implements ActivityRepository {
     private final ActivityRegistrationMapper registrationMapper;
 
     // ===== 转换方法 =====
-    private Activity toActivity(ActivityPO po) { Activity a = new Activity(); BeanUtils.copyProperties(po, a); return a; }
-    private ActivityPO toActivityPO(Activity a) { ActivityPO po = new ActivityPO(); BeanUtils.copyProperties(a, po); return po; }
-    private ActivityRegistration toReg(ActivityRegistrationPO po) { ActivityRegistration r = new ActivityRegistration(); BeanUtils.copyProperties(po, r); return r; }
-    private ActivityRegistrationPO toRegPO(ActivityRegistration r) { ActivityRegistrationPO po = new ActivityRegistrationPO(); BeanUtils.copyProperties(r, po); return po; }
+    private Activity toActivity(ActivityPO po) { if (po == null) return null; Activity a = new Activity(); BeanUtils.copyProperties(po, a); return a; }
+    private ActivityPO toActivityPO(Activity a) { if (a == null) return null; ActivityPO po = new ActivityPO(); BeanUtils.copyProperties(a, po); return po; }
+    private ActivityRegistration toReg(ActivityRegistrationPO po) { if (po == null) return null; ActivityRegistration r = new ActivityRegistration(); BeanUtils.copyProperties(po, r); return r; }
+    private ActivityRegistrationPO toRegPO(ActivityRegistration r) { if (r == null) return null; ActivityRegistrationPO po = new ActivityRegistrationPO(); BeanUtils.copyProperties(r, po); return po; }
 
     // ===== Activity CRUD =====
 

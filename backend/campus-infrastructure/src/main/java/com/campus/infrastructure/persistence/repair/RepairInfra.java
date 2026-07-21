@@ -2,6 +2,7 @@ package com.campus.infrastructure.persistence.repair;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.handlers.JacksonTypeHandler;
 import lombok.Data;
 import org.apache.ibatis.annotations.*;
 import java.time.LocalDateTime;
@@ -13,7 +14,9 @@ class RepairPO {
     @TableId(type = IdType.AUTO) private Long id;
     @TableField("user_id") private Long userId;
     private String type; @TableField("type_code") private String typeCode;
-    private String title; private String description; private String images;
+    private String title; private String description;
+    @TableField(typeHandler = JacksonTypeHandler.class)
+    private String images;
     private String building; private String room; @TableField("contact_phone") private String contactPhone;
     private String status; @TableField("status_desc") private String statusDesc;
     @TableField("expected_time") private LocalDateTime expectedTime;
