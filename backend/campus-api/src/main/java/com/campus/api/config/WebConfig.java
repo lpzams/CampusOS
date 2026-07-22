@@ -1,40 +1,24 @@
 package com.campus.api.config;
 
-import com.campus.api.security.AuthInterceptor;
-import com.campus.api.security.PermissionInterceptor;
-import lombok.RequiredArgsConstructor;
+import com.campus.api.auth.AuthInterceptor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-/**
- * Web 配置 —— 注册双拦截器
- * <p>
- * 拦截器执行顺序：
- * <ol>
- *   <li>AuthInterceptor（认证拦截器）— 拦截所有 /api/**，解析 Token → ThreadLocal</li>
- *   <li>PermissionInterceptor（权限拦截器）— 拦截需登录的路径，检查 ThreadLocal</li>
- * </ol>
- */
 @Configuration
-@RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
-
-    private final AuthInterceptor authInterceptor;
-    private final PermissionInterceptor permissionInterceptor;
-    private final SecurityProperties securityProperties;
-
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        // ===== 1. 认证拦截器：拦截所有 /api/** =====
-        registry.addInterceptor(authInterceptor)
-                .addPathPatterns("/api/**")
-                .order(1);
-
-        // ===== 2. 权限拦截器：仅拦截需要登录的接口 =====
-        registry.addInterceptor(permissionInterceptor)
-                .addPathPatterns("/api/**")
-                .excludePathPatterns(securityProperties.getWhitelist())
-                .order(2);
+    private final AuthInterceptor auth;
+    private final String uploadDir;
+    public WebConfig(AuthInterceptor auth, @Value("${campus.upload-dir:uploads}") String uploadDir) { this.auth = auth; this.uploadDir = uploadDir; }
+    @Override public void addInterceptors(InterceptorRegistry registry) { registry.addInterceptor(auth).addPathPatterns("/api/**"); }
+    @Override public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**").allowedOriginPatterns("*").allowedMethods("GET", "POST", "PUT", "DELETE");
+    }
+    @Override public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        String location = java.nio.file.Path.of(uploadDir).toAbsolutePath().normalize().toUri() + "/";
+        registry.addResourceHandler("/uploads/**").addResourceLocations(location);
     }
 }

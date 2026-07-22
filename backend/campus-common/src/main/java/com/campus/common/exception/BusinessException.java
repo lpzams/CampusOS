@@ -1,26 +1,23 @@
 package com.campus.common.exception;
 
 import com.campus.common.api.ResultCode;
-import lombok.Getter;
 
 /**
- * 业务异常
- * <p>
- * 在业务层（Application/Domain）抛出，由 GlobalExceptionHandler 统一捕获并转换为 Result
- * <p>
- * 用法：
+ * 业务异常。
+ *
+ * <p>凡是"可预期的、要告诉用户具体原因"的错误，都抛这个异常，
+ * 由 api 层的全局异常处理器统一捕获并转成 {@link com.campus.common.api.Result}。
+ *
+ * <p>用法举例：
  * <pre>
- * // 使用预定义状态码
- * throw new BusinessException(ResultCode.USERNAME_EXISTS);
- * // 自定义消息
- * throw new BusinessException("自定义错误消息");
- * // 自定义状态码+消息
- * throw new BusinessException(1001, "自定义错误");
+ *   if (news == null) {
+ *       throw new BusinessException(ResultCode.NOT_FOUND, "新闻不存在");
+ *   }
  * </pre>
  */
-@Getter
 public class BusinessException extends RuntimeException {
 
+    /** 错误码，前端可据此做分支处理 */
     private final int code;
 
     public BusinessException(String message) {
@@ -28,23 +25,22 @@ public class BusinessException extends RuntimeException {
         this.code = ResultCode.FAILED.getCode();
     }
 
-    public BusinessException(int code, String message) {
-        super(message);
-        this.code = code;
-    }
-
     public BusinessException(ResultCode resultCode) {
         super(resultCode.getMessage());
         this.code = resultCode.getCode();
     }
 
-    public BusinessException(String message, Throwable cause) {
-        super(message, cause);
-        this.code = ResultCode.FAILED.getCode();
+    public BusinessException(ResultCode resultCode, String message) {
+        super(message);
+        this.code = resultCode.getCode();
     }
 
-    public BusinessException(ResultCode resultCode, Throwable cause) {
-        super(resultCode.getMessage(), cause);
-        this.code = resultCode.getCode();
+    public BusinessException(int code, String message) {
+        super(message);
+        this.code = code;
+    }
+
+    public int getCode() {
+        return code;
     }
 }

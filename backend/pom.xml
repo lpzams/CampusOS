@@ -40,7 +40,6 @@
         <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
-        <hutool.version>5.8.27</hutool.version>
         <jwt.version>0.12.5</jwt.version>
     </properties>
 
@@ -75,13 +74,6 @@
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
-            <!-- 常用工具库 -->
-            <dependency>
-                <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
-                <version>${hutool.version}</version>
-            </dependency>
-
             <!-- JWT -->
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>
@@ -107,19 +99,6 @@
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <annotationProcessorPaths>
-                            <path>
-                                <groupId>org.projectlombok</groupId>
-                                <artifactId>lombok</artifactId>
-                                <version>1.18.34</version>
-                            </path>
-                        </annotationProcessorPaths>
-                    </configuration>
                 </plugin>
             </plugins>
         </pluginManagement>

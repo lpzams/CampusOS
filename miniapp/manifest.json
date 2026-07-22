@@ -15,6 +15,12 @@
       "postcss": true,
       "minified": true
     },
+    "permission": {
+      "scope.userLocation": {
+        "desc": "用于校园地图定位与步行路线规划"
+      }
+    },
+    "requiredPrivateInfos": ["getLocation"],
     "usingComponents": true
   },
   "uniStatistics": {

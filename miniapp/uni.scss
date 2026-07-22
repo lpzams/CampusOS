@@ -1,15 +1,35 @@
 /**
  * uni.scss —— uni-app 约定的全局 SCSS 变量文件（自动注入每个页面，无需 import）。
  * 想统一改主题色，只改这里即可。
+ *
+ * 与 web/src/App.vue 的暮紫主题保持一致。
  */
 
-/* 主题色（和网站端顶栏、pages.json 导航栏保持一致） */
-$campus-primary: #2f54eb;
+/* 品牌暮紫 */
+$campus-primary: #7c5cd6;
+$campus-primary-deep: #241457;
+$campus-primary-light: #b06fd0;
+$campus-primary-tint: #f4effd;
+$campus-brand: #7c5cd6;
+
+/* 反馈色（对齐 Element Plus：danger / warning / success） */
+$campus-danger: #f56c6c;
+$campus-warning: #e6a23c;
+$campus-success: #67c23a;
 
 /* 文字颜色（对齐 Element Plus 的默认灰阶，双端观感一致） */
-$campus-text-main: #303133;
-$campus-text-secondary: #606266;
-$campus-text-muted: #909399;
+$campus-text-main: #2c2350;
+$campus-text-secondary: #6a628c;
+$campus-text-muted: #9a92b8;
+
+/* 边框与分割线（对齐 Element Plus border 灰阶） */
+$campus-border: #dcd2f7;
+$campus-border-light: #ece4fb;
 
 /* 页面背景 */
-$campus-bg: #f5f6fa;
+$campus-bg: #f7f3fb;
+
+/* 统一的玻璃卡片与阴影参数 */
+$campus-surface: rgba(255, 255, 255, .94);
+$campus-radius: 24rpx;
+$campus-shadow: 0 12rpx 36rpx rgba(79, 54, 145, .08);

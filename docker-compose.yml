@@ -72,8 +72,13 @@ services:
       # 里的 localhost —— 这就是"配置外置"，代码一行不用改
       SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/campus_os?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true"
       SPRING_DATA_REDIS_HOST: redis
+      ANTHROPIC_BASE_URL: "${ANTHROPIC_BASE_URL:-}"
+      ANTHROPIC_AUTH_TOKEN: "${ANTHROPIC_AUTH_TOKEN:-}"
+      ANTHROPIC_MODEL: "${ANTHROPIC_MODEL:-claude-opus-4-8}"
     ports:
       - "8080:8080"
+    volumes:
+      - uploads-data:/app/uploads
     depends_on:
       # 等 MySQL 完全就绪（healthcheck 通过）再启动后端，避免起太快连不上库
       mysql:
@@ -93,3 +98,4 @@ services:
 
 volumes:
   mysql-data:
+  uploads-data:

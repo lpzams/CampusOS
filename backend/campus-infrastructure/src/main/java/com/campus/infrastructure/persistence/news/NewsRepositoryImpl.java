@@ -1,96 +1,87 @@
 package com.campus.infrastructure.persistence.news;
 
-import com.campus.common.query.PageQuery;
-import com.campus.domain.news.entity.News;
-import com.campus.domain.news.repository.NewsRepository;
-import com.campus.infrastructure.cache.NewsCacheService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.campus.domain.news.News;
+import com.campus.domain.news.NewsRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
- * 新闻仓储实现 —— Cache-Aside 模式（详情查询走缓存，列表查询直接查DB）
+ * 新闻仓储实现 —— 用 MyBatis-Plus 落地 {@link NewsRepository} 端口。
+ *
+ * <p>【DDD 洋葱架构·infrastructure 层】
+ * <ul>
+ *   <li>这是"适配器(Adapter)"：把领域层声明的存取能力，翻译成具体的 MyBatis-Plus 调用。</li>
+ *   <li>对外只暴露领域实体 {@link News}，PO 是内部细节，进出这里都经 {@link NewsConverter} 转换。</li>
+ *   <li>被 Spring 扫描为 Bean（@Repository），application 层通过 NewsRepository 接口注入它，
+ *       不知道也不关心背后是 MyBatis-Plus。</li>
+ * </ul>
+ *
+ * <p>【新增功能时】照抄本类：在 persistence.你的功能 下建 XxxRepositoryImpl，
+ * implements 你的 domain 仓储接口，注入对应 Mapper。
  */
-@Slf4j
 @Repository
-@RequiredArgsConstructor
 public class NewsRepositoryImpl implements NewsRepository {
 
     private final NewsMapper newsMapper;
-    private final NewsConverter newsConverter;
-    private final NewsCacheService newsCacheService;
 
-    // ==================== 读操作 ====================
-
-    @Override
-    public List<News> findPublishedPage(PageQuery query, Long categoryId, String keyword) {
-        // 列表查询变化频繁，不缓存，直接查 DB
-        return newsConverter.toNewsList(
-                newsMapper.selectPublishedPage(categoryId, keyword, query.getOffset(), query.getPageSize()));
+    public NewsRepositoryImpl(NewsMapper newsMapper) {
+        this.newsMapper = newsMapper;
     }
 
     @Override
-    public long countPublished(Long categoryId, String keyword) {
-        return newsMapper.countPublished(categoryId, keyword);
-    }
-
-    @Override
-    public News findById(Long id) {
-        if (id == null) return null;
-
-        // 1. 查缓存
-        News cached = newsCacheService.getNews(id);
-        if (cached != null) return cached;
-
-        // 2. 查 DB
-        News news = newsConverter.toNews(newsMapper.selectById(id));
-
-        // 3. 回填缓存
-        if (news != null) {
-            newsCacheService.putNews(news);
+    public News save(News news) {
+        NewsPO po = NewsConverter.toPO(news);
+        if (po.getId() == null) {
+            newsMapper.insert(po);
+        } else {
+            newsMapper.updateById(po);
         }
+        // 回填自增主键
+        news.setId(po.getId());
         return news;
     }
 
-    // ==================== 写操作（DB 优先 → 删缓存） ====================
-
     @Override
-    public void save(News news) {
-        NewsPO po = newsConverter.toNewsPO(news);
-        newsMapper.insert(po);
-        news.setId(po.getId());
-        // 新增，无旧缓存
+    public Optional<News> findById(Long id) {
+        NewsPO po = newsMapper.selectById(id);
+        return Optional.ofNullable(NewsConverter.toDomain(po));
     }
 
     @Override
-    public void update(News news) {
-        // 1. 先写 DB
-        NewsPO po = newsConverter.toNewsPO(news);
-        newsMapper.updateById(po);
-        // 2. 再删缓存
-        newsCacheService.evictNews(news.getId());
-    }
-
-    // ==================== 原子计数操作 ====================
-
-    @Override
-    public void incrementViewCount(Long id) {
-        newsMapper.incrementViewCount(id);
-        // 更新后缓存失效，下次读取回填
-        newsCacheService.evictNews(id);
+    public void deleteById(Long id) {
+        // 逻辑删除：因为 NewsPO.deleted 标了 @TableLogic，这里实际执行的是 UPDATE ... SET deleted=1
+        newsMapper.deleteById(id);
     }
 
     @Override
-    public void incrementFavoriteCount(Long id) {
-        newsMapper.incrementFavoriteCount(id);
-        newsCacheService.evictNews(id);
+    public List<News> findPublishedPage(String keyword, String category, long offset, long limit) {
+        List<NewsPO> records = newsMapper.selectList(buildPublishedWrapper(keyword, category)
+                .orderByDesc(NewsPO::getPublishTime)
+                .last("LIMIT " + offset + ", " + limit));
+        return records.stream()
+                .map(NewsConverter::toDomain)
+                .collect(Collectors.toList());
     }
 
     @Override
-    public void decrementFavoriteCount(Long id) {
-        newsMapper.decrementFavoriteCount(id);
-        newsCacheService.evictNews(id);
+    public long countPublished(String keyword, String category) {
+        return newsMapper.selectCount(buildPublishedWrapper(keyword, category));
+    }
+
+    /** 抽出公共查询条件：只查已发布，标题模糊、分类精确，两个条件都可为空 */
+    private LambdaQueryWrapper<NewsPO> buildPublishedWrapper(String keyword, String category) {
+        LambdaQueryWrapper<NewsPO> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(NewsPO::getStatus, News.Status.PUBLISHED.name());
+        if (keyword != null && !keyword.isBlank()) {
+            wrapper.like(NewsPO::getTitle, keyword);
+        }
+        if (category != null && !category.isBlank()) {
+            wrapper.eq(NewsPO::getCategory, category);
+        }
+        return wrapper;
     }
 }

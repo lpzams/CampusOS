@@ -1,9 +1,10 @@
-# syntax=docker/dockerfile:1
 # ============================================================
 # 网站端镜像 —— 多阶段构建：
 #   阶段1 build：Node 里执行 npm ci + npm run build，产出 dist 静态文件
 #   阶段2 运行：nginx 托管 dist，并把 /api 反向代理给后端容器
 # 由根目录 docker-compose.yml 统一构建/启动，一般不用手动 docker build。
+# 注：不写 "# syntax=" 首行 —— 那会强制去 Docker Hub 拉 dockerfile 前端镜像，
+# 国内网络经常超时；Docker Desktop 内置 BuildKit 已支持下面用到的全部语法。
 # ============================================================
 
 FROM node:20-alpine AS build
@@ -15,7 +16,7 @@ RUN npm config set registry https://registry.npmmirror.com
 # 先只拷 package*.json 装依赖：只要依赖没变，这一层直接走缓存，改代码重建很快
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --no-audit --no-fund
+    npm ci --legacy-peer-deps --no-audit --no-fund
 
 # 再拷源码打包（node_modules/dist 已被 .dockerignore 排除）
 COPY . .

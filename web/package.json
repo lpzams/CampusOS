@@ -11,16 +11,26 @@
     "lint": "eslint . --ext .vue,.ts,.tsx --fix"
   },
   "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@types/leaflet": "^1.9.21",
+    "@xyflow/react": "^12.11.2",
     "axios": "^1.7.2",
     "element-plus": "^2.7.6",
-    "@element-plus/icons-vue": "^2.3.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^1.25.0",
     "pinia": "^2.1.7",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "vue": "^3.4.31",
     "vue-router": "^4.4.0"
   },
   "devDependencies": {
     "@types/node": "^20.14.9",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
     "@vitejs/plugin-vue": "^5.0.5",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.5.2",
     "unplugin-auto-import": "^0.17.6",
     "unplugin-vue-components": "^0.27.2",

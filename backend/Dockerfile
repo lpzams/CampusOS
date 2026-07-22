@@ -1,9 +1,10 @@
-# syntax=docker/dockerfile:1
 # ============================================================
 # 后端镜像 —— 多阶段构建：
 #   阶段1 build：用带 Maven+JDK17 的镜像把源码打成可执行 jar
 #   阶段2 运行：只拷贝 jar 到一个精简的 JRE 镜像里跑（镜像小、干净）
 # 由根目录 docker-compose.yml 统一构建/启动，一般不用手动 docker build。
+# 注：不写 "# syntax=" 首行 —— 那会强制去 Docker Hub 拉 dockerfile 前端镜像，
+# 国内网络经常超时；Docker Desktop 内置 BuildKit 已支持下面用到的全部语法。
 # ============================================================
 
 FROM maven:3.9-eclipse-temurin-17 AS build

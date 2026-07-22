@@ -11,6 +11,6 @@ export function formatDateTime(value) {
 /** 取正文前 n 个字作为列表摘要 */
 export function summary(content, n = 60) {
   if (!content) return ''
-  const plain = content.replace(/\s+/g, ' ').trim()
+  const plain = content.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
   return plain.length > n ? plain.slice(0, n) + '…' : plain
 }

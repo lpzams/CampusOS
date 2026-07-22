@@ -17,3 +17,22 @@ export function summary(content?: string | null, n = 80): string {
   const plain = content.replace(/\s+/g, ' ').trim()
   return plain.length > n ? plain.slice(0, n) + '…' : plain
 }
+
+/** 金额展示："¥5,200.00"；空值返回 "-"（金额字段后端可能是 number 或字符串） */
+export function formatMoney(value?: number | string | null): string {
+  if (value === null || value === undefined || value === '') return '-'
+  const num = Number(value)
+  if (Number.isNaN(num)) return String(value)
+  return `¥${num.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+}
+
+/**
+ * 后端返回的文件路径（如头像 /uploads/avatars/xx.png）转成可访问的 URL。
+ * 开发环境 /uploads 由 vite 代理转发到后端（见 vite.config.ts）；
+ * 生产环境由 nginx 做同样的转发。完整 http(s) 地址原样返回。
+ */
+export function fileUrl(path?: string | null): string {
+  if (!path) return ''
+  if (/^https?:\/\//.test(path)) return path
+  return path
+}

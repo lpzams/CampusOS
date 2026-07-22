@@ -44,6 +44,8 @@ docker compose up -d --build
 | MySQL / Redis | localhost:3306（root/root）/ localhost:6379 |
 
 数据库首次启动自动执行 `docs/sql/` 全部脚本（建库建表 + 示例数据）。
+首次启动会创建演示管理员 `admin / 123456`；部署前请登录修改密码，并设置
+`CAMPUS_JWT_SECRET` 与 `CAMPUS_EXPOSE_SMS_CODE=false`。
 改了代码想更新容器：还是这一条命令。更多命令见 `docker-compose.yml` 头部注释。
 
 ### 方式二：开发模式（平时写代码）

@@ -1,151 +1,69 @@
 /**
- * 登录认证模块 API —— 一个功能一个文件，集中放该功能的接口函数和类型。
+ * 认证模块 API（功能 1：用户登录与统一认证）。
  *
- * 每个函数对应后端 AuthController 的一个端点，类型对应后端的 DTO / VO。
- *
- * 【新增功能时】照抄本文件：建 api/你的功能.ts，
- * 把 URL 前缀换成 /你的功能，类型对着你后端的 DTO 写一遍。
+ * 对应后端 AuthController（/api/auth/**）。登录/注册成功后返回 LoginResult，
+ * 页面拿到后调用 stores/user.ts 的 login() 保存登录态，
+ * 之后 request.ts 会自动在每个请求头带上 Authorization: Bearer {token}。
  */
-import { get, post, put, upload } from '../utils/request'
-import type {
-  Result,
-  LoginParams,
-  LoginResponse,
-  SmsLoginParams,
-  SendSmsParams,
-  WechatLoginParams,
-  WechatLoginResponse,
-  RegisterParams,
-  RegisterResponse,
-  ForgotPasswordParams,
-  RefreshTokenResponse,
-  UserProfile,
-  UpdateProfileParams,
-  UpdateProfileResponse,
-  AvatarUploadResponse,
-  StudentProfile,
-  TeacherProfile,
-  VerifyParams,
-  VerifyResponse,
-  ChangePasswordParams,
-} from './types'
+import { post } from '@/utils/request'
 
-// ============================================================
-// ===== 1.1 账号密码登录 =====
-// ============================================================
-
-export function loginApi(data: LoginParams) {
-  return post<Result<LoginResponse>>('/auth/login', data)
+/** 登录/注册成功的返回（后端 AuthAppService.loginResult：用户资料 + token） */
+export interface LoginResult {
+  token: string
+  userId: number
+  username: string
+  realName?: string
+  /** 1-学生 2-教师 3-管理员 */
+  userType: number
+  avatar?: string
+  phone?: string
+  email?: string
+  department?: string
+  /** token 有效期（毫秒） */
+  expiresIn?: number
+  [key: string]: unknown
 }
 
-// ============================================================
-// ===== 1.2 手机验证码登录 =====
-// ============================================================
-
-export function loginBySmsApi(data: SmsLoginParams) {
-  return post<Result<LoginResponse>>('/auth/login/sms', data)
+/** 注册表单（对应后端 /auth/register 的请求体） */
+export interface RegisterForm {
+  username: string
+  password: string
+  realName: string
+  phone: string
+  email?: string
+  /** 1-学生 2-教师（管理员不开放注册） */
+  userType: number
+  department?: string
+  /** 学生填学号、教师填工号 */
+  studentId?: string
 }
 
-// ============================================================
-// ===== 1.3 发送验证码 =====
-// ============================================================
-
-export function sendSmsCodeApi(data: SendSmsParams) {
-  return post<Result<null>>('/auth/sms/send', data)
+/** 账号密码登录：POST /api/auth/login（种子账号 admin / 123456） */
+export function login(data: { username: string; password: string }) {
+  return post<LoginResult>('/auth/login', data)
 }
 
-// ============================================================
-// ===== 1.4 微信授权登录（小程序） =====
-// ============================================================
-
-export function wechatLoginApi(data: WechatLoginParams) {
-  return post<Result<WechatLoginResponse>>('/auth/login/wechat', data)
+/** 手机验证码登录：POST /api/auth/login/sms */
+export function loginBySms(data: { phone: string; code: string }) {
+  return post<LoginResult>('/auth/login/sms', data)
 }
 
-// ============================================================
-// ===== 1.5 用户注册 =====
-// ============================================================
-
-export function registerApi(data: RegisterParams) {
-  return post<Result<RegisterResponse>>('/auth/register', data)
+/** 发送验证码：POST /api/auth/sms/send（本地演示模式后端会把验证码直接返回，方便联调） */
+export function sendSmsCode(phone: string) {
+  return post<{ sent: boolean; code?: string }>('/auth/sms/send', { phone, type: 'LOGIN' })
 }
 
-// ============================================================
-// ===== 1.6 忘记密码 =====
-// ============================================================
-
-export function forgotPasswordApi(data: ForgotPasswordParams) {
-  return post<Result<null>>('/auth/forgot-password', data)
+/** 注册（成功即自动登录，返回结构同 login）：POST /api/auth/register */
+export function register(data: RegisterForm) {
+  return post<LoginResult>('/auth/register', data)
 }
 
-// ============================================================
-// ===== 1.7 退出登录 =====
-// ============================================================
-
-export function logoutApi() {
-  return post<Result<null>>('/auth/logout')
+/** 忘记密码（凭手机验证码重置）：POST /api/auth/forgot-password */
+export function forgotPassword(data: { username: string; phone: string; code: string; newPassword: string }) {
+  return post<void>('/auth/forgot-password', data)
 }
 
-// ============================================================
-// ===== 1.8 刷新 Token =====
-// ============================================================
-
-export function refreshTokenApi() {
-  return post<Result<RefreshTokenResponse>>('/auth/refresh')
-}
-
-// ============================================================
-// ===== 2.1 获取个人信息 =====
-// ============================================================
-
-export function getUserProfileApi() {
-  return get<Result<UserProfile>>('/user/profile')
-}
-
-// ============================================================
-// ===== 2.2 修改个人信息 =====
-// ============================================================
-
-export function updateProfileApi(data: UpdateProfileParams) {
-  return put<Result<UpdateProfileResponse>>('/user/profile', data)
-}
-
-// ============================================================
-// ===== 2.3 修改头像 =====
-// ============================================================
-
-export function uploadAvatarApi(data: FormData) {
-  return upload<Result<AvatarUploadResponse>>('/user/avatar', data)
-}
-
-// ============================================================
-// ===== 2.4 获取学生详细信息 =====
-// ============================================================
-
-export function getStudentProfileApi() {
-  return get<Result<StudentProfile>>('/user/profile/student')
-}
-
-// ============================================================
-// ===== 2.5 获取教师详细信息 =====
-// ============================================================
-
-export function getTeacherProfileApi() {
-  return get<Result<TeacherProfile>>('/user/profile/teacher')
-}
-
-// ============================================================
-// ===== 2.6 实名认证 =====
-// ============================================================
-
-export function submitVerifyApi(data: VerifyParams) {
-  return post<Result<VerifyResponse>>('/user/verify', data)
-}
-
-// ============================================================
-// ===== 2.7 修改密码 =====
-// ============================================================
-
-export function changePasswordApi(data: ChangePasswordParams) {
-  return put<Result<null>>('/user/password', data)
+/** 退出登录：POST /api/auth/logout（后端无状态，前端同时要清本地登录态） */
+export function logout() {
+  return post<void>('/auth/logout')
 }

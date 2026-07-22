@@ -1,35 +1,48 @@
 /**
- * 成绩查询模块 API
+ * 成绩查询 API（功能 6）。
+ *
+ * 对应后端 ScoreController（/api/score/**，全部需要登录）。
+ * /score/list 一次性带回统计值（GPA/学分/平均分）和成绩明细，页面直接用。
  */
-import { get } from '../utils/request'
-import type {
-  Result,
-  ScoreListParams,
-  ScoreListResponse,
-  GpaResponse,
-  ScoreStatisticsResponse,
-} from './types'
+import { get } from '@/utils/request'
 
-// ============================================================
-// ===== 6.1 获取成绩列表 =====
-// ============================================================
-
-export function getScoreList(params?: ScoreListParams) {
-  return get<Result<ScoreListResponse>>('/score/list', params)
+/** 一条成绩记录 */
+export interface ScoreItem {
+  id?: number
+  courseName: string
+  courseCode?: string
+  credit: number
+  score: number
+  /** 如"优秀"、"良好" */
+  grade?: string
+  /** 考试 / 平时 */
+  type?: string
+  semester?: string
+  examTime?: string
+  [key: string]: unknown
 }
 
-// ============================================================
-// ===== 6.2 获取 GPA =====
-// ============================================================
-
-export function getGpa() {
-  return get<Result<GpaResponse>>('/score/gpa')
+/** 成绩列表（带统计）返回结构 */
+export interface ScoreSummary {
+  gpa: number
+  totalCredits: number
+  average: number
+  count: number
+  semester?: string | null
+  scores: ScoreItem[]
 }
 
-// ============================================================
-// ===== 6.3 成绩统计分析 =====
-// ============================================================
+/** 成绩列表 + 统计（需登录）：GET /api/score/list?semester=&type= */
+export function getScores(params?: { semester?: string; type?: string }) {
+  return get<ScoreSummary>('/score/list', params)
+}
 
-export function getScoreStatistics() {
-  return get<Result<ScoreStatisticsResponse>>('/score/statistics')
+/** 仅查 GPA：GET /api/score/gpa */
+export function getGpa(params?: { semester?: string }) {
+  return get<{ gpa: number; totalCredits: number }>('/score/gpa', params)
+}
+
+/** 成绩统计分析：GET /api/score/statistics */
+export function getScoreStatistics(params?: { semester?: string }) {
+  return get<{ gpa: number; totalCredits: number; average: number; count: number }>('/score/statistics', params)
 }

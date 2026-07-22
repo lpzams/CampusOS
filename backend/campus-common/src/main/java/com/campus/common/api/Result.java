@@ -1,51 +1,36 @@
 package com.campus.common.api;
 
-import lombok.Data;
-
 import java.io.Serializable;
 
 /**
- * 统一返回结构
+ * 统一返回结构。所有 Controller 都返回 Result，前端只认这一种格式。
  * <p>
- * 所有 Controller 统一返回 Result，前端统一解析
- * <p>
- * 用法：
- * <pre>
- * // 成功返回数据
- * return Result.success(data);
- * // 成功无数据
- * return Result.success();
- * // 业务异常
- * throw new BusinessException(ResultCode.USERNAME_EXISTS);
- * // 自定义消息
- * throw new BusinessException("自定义错误消息");
- * </pre>
+ * 约定：code=0 成功（见 {@link ResultCode#SUCCESS}），其余为失败；data 放业务数据；msg 给前端展示的提示。
+ * 加功能时不要自己发明返回格式，一律用 Result.success(...) / Result.fail(...)。
  */
-@Data
 public class Result<T> implements Serializable {
 
     private int code;
     private String msg;
     private T data;
 
-    // ===== 成功 =====
+    public int getCode() { return code; }
+    public void setCode(int code) { this.code = code; }
+    public String getMsg() { return msg; }
+    public void setMsg(String msg) { this.msg = msg; }
+    public T getData() { return data; }
+    public void setData(T data) { this.data = data; }
+
+    public static <T> Result<T> success(T data) {
+        Result<T> r = new Result<>();
+        r.setCode(ResultCode.SUCCESS.getCode());
+        r.setMsg(ResultCode.SUCCESS.getMessage());
+        r.setData(data);
+        return r;
+    }
 
     public static <T> Result<T> success() {
         return success(null);
-    }
-
-    public static <T> Result<T> success(T data) {
-        Result<T> result = new Result<>();
-        result.setCode(ResultCode.SUCCESS.getCode());
-        result.setMsg(ResultCode.SUCCESS.getMessage());
-        result.setData(data);
-        return result;
-    }
-
-    // ===== 失败 =====
-
-    public static <T> Result<T> fail() {
-        return fail(ResultCode.FAILED);
     }
 
     public static <T> Result<T> fail(String msg) {
@@ -53,10 +38,10 @@ public class Result<T> implements Serializable {
     }
 
     public static <T> Result<T> fail(int code, String msg) {
-        Result<T> result = new Result<>();
-        result.setCode(code);
-        result.setMsg(msg);
-        return result;
+        Result<T> r = new Result<>();
+        r.setCode(code);
+        r.setMsg(msg);
+        return r;
     }
 
     public static <T> Result<T> fail(ResultCode resultCode) {

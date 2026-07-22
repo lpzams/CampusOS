@@ -1,197 +1,200 @@
-<template>
-  <div class="favorite-page">
-    <h2 class="page-title">我的收藏</h2>
-
-    <div v-loading="loading" class="favorite-list">
-      <div
-        v-for="item in favoriteList"
-        :key="item.id"
-        class="favorite-item"
-        @click="goToDetail(item.id)"
-      >
-        <div class="item-cover">
-          <el-image :src="item.coverImage" fit="cover">
-            <template #placeholder>
-              <div class="image-placeholder">📰</div>
-            </template>
-            <template #error>
-              <div class="image-placeholder">📰</div>
-            </template>
-          </el-image>
-        </div>
-        <div class="item-info">
-          <h4 class="item-title">{{ item.title }}</h4>
-          <p class="item-summary">{{ item.summary || '暂无摘要' }}</p>
-          <div class="item-meta">
-            <span>📂 {{ item.category }}</span>
-            <span>👁️ {{ item.viewCount }}</span>
-            <span>❤️ {{ formatDateTime(item.createTime) }}</span>
-          </div>
-        </div>
-      </div>
-
-      <el-empty v-if="!loading && favoriteList.length === 0" description="暂无收藏" />
-    </div>
-
-    <div class="pagination-wrapper">
-      <el-pagination
-        v-model:page-size="pageSize"
-        v-model:current-page="currentPage"
-        :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next"
-        @size-change="fetchFavorites"
-        @current-change="fetchFavorites"
-      />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+/**
+ * 我的收藏（整合自 CampusOS_a 的 FavoriteView）。
+ *
+ * 对应后端 GET /api/news/favorites（返回收藏的完整新闻列表，需登录）。
+ * 支持在列表里直接取消收藏；点击卡片进入新闻详情。
+ */
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { getFavoriteList } from '@/api/news'
-import type { FavoriteNewsItem } from '@/api/types'
-import { formatDateTime } from '@/utils/format'
+import { Star } from '@element-plus/icons-vue'
+import { getFavorites, unfavoriteNews } from '@/api/news'
+import type { NewsItem } from '@/api/news'
+import { formatDateTime, summary } from '@/utils/format'
 
 const router = useRouter()
 
 const loading = ref(false)
-const favoriteList = ref<FavoriteNewsItem[]>([])
-const total = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
+const list = ref<NewsItem[]>([])
+
+/** 栏目 -> 彩色标签样式（与新闻列表页一致） */
+const CATEGORY_CLASS: Record<string, string> = {
+  校园新闻: 'cat-violet',
+  学院动态: 'cat-teal',
+  通知公告: 'cat-rose',
+  政策文件: 'cat-gold',
+}
 
 async function fetchFavorites() {
   loading.value = true
   try {
-    const res = await getFavoriteList({
-      page: currentPage.value,
-      size: pageSize.value,
-    })
-    if (res.code === 200 && res.data) {
-      favoriteList.value = res.data.list || []
-      total.value = res.data.total || 0
-    }
-  } catch {
-    ElMessage.error('加载收藏列表失败')
+    list.value = await getFavorites()
   } finally {
     loading.value = false
   }
 }
 
-function goToDetail(id: number) {
+/** 取消收藏后就地移除，不整页刷新 */
+async function removeFavorite(item: NewsItem, event: MouseEvent) {
+  event.stopPropagation()
+  await unfavoriteNews(item.id)
+  list.value = list.value.filter(row => row.id !== item.id)
+  ElMessage.success('已取消收藏')
+}
+
+function goDetail(id: number) {
   router.push(`/news/${id}`)
 }
 
-onMounted(() => {
-  fetchFavorites()
-})
+onMounted(fetchFavorites)
 </script>
 
+<template>
+  <div>
+    <!-- 收藏夹 hero（沿用全站暮紫渐变风格） -->
+    <section class="fav-hero">
+      <span class="hero-eyebrow">MY FAVORITES · 我的收藏</span>
+      <h1>把值得反复看的资讯<em>收进口袋</em></h1>
+      <p>共收藏 {{ list.length }} 篇资讯</p>
+    </section>
+
+    <div v-loading="loading" class="fav-list">
+      <el-empty v-if="!loading && list.length === 0" description="暂无收藏，去资讯详情页点亮 ☆ 试试" />
+
+      <el-card
+        v-for="item in list"
+        :key="item.id"
+        shadow="never"
+        class="fav-card"
+        @click="goDetail(item.id)"
+      >
+        <div class="fav-title-row">
+          <span class="fav-title">{{ item.title }}</span>
+          <span class="news-cat" :class="CATEGORY_CLASS[item.category] || 'cat-violet'">{{ item.category }}</span>
+        </div>
+        <p class="fav-summary">{{ summary(item.content) }}</p>
+        <div class="fav-footer">
+          <div class="fav-meta">
+            <span>✍️ {{ item.author }}</span>
+            <span>👁️ {{ item.viewCount }}</span>
+            <span>📅 {{ formatDateTime(item.publishedAt || item.createdAt) }}</span>
+          </div>
+          <el-button size="small" text type="danger" :icon="Star" @click="removeFavorite(item, $event)">
+            取消收藏
+          </el-button>
+        </div>
+      </el-card>
+    </div>
+  </div>
+</template>
+
 <style scoped>
-.favorite-page {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
-}
-
-.page-title {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 24px 0;
-}
-
-.favorite-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 300px;
-}
-
-.favorite-item {
-  display: flex;
-  gap: 16px;
-  padding: 16px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-
-.favorite-item:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.item-cover {
-  flex-shrink: 0;
-  width: 150px;
-  height: 100px;
-  border-radius: 6px;
+.fav-hero {
+  position: relative;
   overflow: hidden;
+  margin-bottom: 16px;
+  padding: 30px 36px 26px;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(120deg, #4a2c78 0%, #7c5cd6 60%, #c06fae 100%);
+  box-shadow: 0 16px 40px #6b3fa036;
 }
 
-.item-cover .el-image {
-  width: 100%;
-  height: 100%;
+.fav-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(#ffffff59 0 1.4px, transparent 2.2px), radial-gradient(#ffe9ad4d 0 1px, transparent 1.8px);
+  background-size: 180px 130px, 240px 170px;
 }
 
-.image-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 30px;
-  background: #f0f2f5;
+.hero-eyebrow {
+  color: #ffd98a;
+  font: 700 11px monospace;
+  letter-spacing: 3px;
 }
 
-.item-info {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
+.fav-hero h1 {
+  margin: 10px 0 8px;
+  font: 700 26px/1.35 Georgia, "STSong", serif;
 }
 
-.item-title {
-  margin: 0 0 6px 0;
-  font-size: 16px;
-  font-weight: 600;
+.fav-hero h1 em {
+  color: #ffd98a;
+  font-style: normal;
 }
 
-.item-summary {
-  margin: 0 0 6px 0;
-  color: #666;
-  font-size: 14px;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.item-meta {
-  display: flex;
-  gap: 16px;
-  color: #999;
+.fav-hero p {
+  margin: 0;
+  color: #ffffffb3;
   font-size: 13px;
 }
 
-.pagination-wrapper {
-  margin-top: 24px;
+.fav-list {
+  min-height: 200px;
+}
+
+.fav-card {
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: transform .18s, box-shadow .18s;
+}
+
+.fav-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px #7c5cd626;
+}
+
+.fav-title-row {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fav-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c2350;
+}
+
+.news-cat {
+  flex-shrink: 0;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.cat-violet { color: #6247ab; background: #efe9fc; }
+.cat-teal { color: #1d7a72; background: #e2f6f2; }
+.cat-rose { color: #b8496d; background: #fde9f0; }
+.cat-gold { color: #96690f; background: #fdf3dd; }
+
+.fav-summary {
+  margin: 8px 0;
+  color: #6a628c;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.fav-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fav-meta {
+  display: flex;
+  gap: 16px;
+  color: #a89ec9;
+  font-size: 13px;
 }
 
 @media (max-width: 640px) {
-  .favorite-item {
-    flex-direction: column;
-  }
-  .item-cover {
-    width: 100%;
-    height: 140px;
-  }
+  .fav-hero { padding: 22px 20px; }
+  .fav-hero h1 { font-size: 20px; }
 }
 </style>

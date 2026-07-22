@@ -1,63 +1,75 @@
 /**
- * 校园活动模块 API
+ * 校园活动 API（功能 13）。
+ *
+ * 对应后端 ActivityController（/api/activity/**）。
+ * 浏览公开；报名/取消/签到/我的活动需要登录。
+ * 注意：取消报名传的是「报名记录 id」（/activity/my 里每条的 id），不是活动 id。
  */
-import { get, post, del } from '../utils/request'
-import type {
-  Result,
-  ActivityListParams,
-  ActivityListResponse,
-  ActivityDetail,
-  ActivityRegisterParams,
-  ActivityRegisterResponse,
-  ActivityCheckinParams,
-  ActivityCheckinResponse,
-  MyActivityItem,
-} from './types'
+import { del, get, post } from '@/utils/request'
+import type { PageResult } from '@/api/types'
 
-// ============================================================
-// ===== 13.1 获取活动列表 =====
-// ============================================================
+/** 活动分类（code 与后端 categoryCode 一致） */
+export const ACTIVITY_CATEGORIES = [
+  { code: 'SPORTS', name: '体育' },
+  { code: 'CULTURE', name: '文艺' },
+  { code: 'ACADEMIC', name: '学术' },
+  { code: 'VOLUNTEER', name: '志愿' },
+] as const
 
-export function getActivityList(params: ActivityListParams) {
-  return get<Result<ActivityListResponse>>('/activity/list', params)
+/** 一场活动 */
+export interface ActivityItem {
+  id: number
+  title: string
+  category?: string
+  categoryCode?: string
+  coverImage?: string
+  startTime?: string
+  endTime?: string
+  location?: string
+  maxParticipants?: number
+  currentParticipants?: number
+  /** 如"报名中" */
+  status?: string
+  content?: string
+  [key: string]: unknown
 }
 
-// ============================================================
-// ===== 13.2 获取活动详情 =====
-// ============================================================
+/** 我的一条报名记录 */
+export interface ActivityRegistration {
+  id: number
+  activityId: number
+  status?: string
+  checkedIn?: boolean
+  createTime?: string
+  [key: string]: unknown
+}
 
+/** 分页查询活动：GET /api/activity/list?category=&status=&page=&size= */
+export function pageActivities(query: { category?: string; status?: string; page?: number; size?: number }) {
+  return get<PageResult<ActivityItem>>('/activity/list', query)
+}
+
+/** 活动详情：GET /api/activity/detail/{id} */
 export function getActivityDetail(id: number | string) {
-  return get<Result<ActivityDetail>>(`/activity/detail/${id}`)
+  return get<ActivityItem>(`/activity/detail/${id}`)
 }
 
-// ============================================================
-// ===== 13.3 报名活动 =====
-// ============================================================
-
-export function registerActivity(data: ActivityRegisterParams) {
-  return post<Result<ActivityRegisterResponse>>('/activity/register', data)
+/** 报名活动（需登录）：POST /api/activity/register */
+export function registerActivity(activityId: number) {
+  return post<ActivityRegistration>('/activity/register', { activityId })
 }
 
-// ============================================================
-// ===== 13.4 取消报名 =====
-// ============================================================
-
-export function cancelActivityRegister(id: number) {
-  return del<Result<null>>(`/activity/register/${id}`)
+/** 取消报名（需登录，id 是报名记录 id）：DELETE /api/activity/register/{id} */
+export function cancelRegistration(registrationId: number) {
+  return del<void>(`/activity/register/${registrationId}`)
 }
 
-// ============================================================
-// ===== 13.5 活动签到 =====
-// ============================================================
-
-export function checkinActivity(data: ActivityCheckinParams) {
-  return post<Result<ActivityCheckinResponse>>('/activity/checkin', data)
+/** 活动签到（需登录，code 为签到码）：POST /api/activity/checkin */
+export function checkinActivity(data: { activityId: number; code: string }) {
+  return post<ActivityRegistration>('/activity/checkin', data)
 }
 
-// ============================================================
-// ===== 13.6 获取我的活动 =====
-// ============================================================
-
+/** 我的报名列表（需登录）：GET /api/activity/my */
 export function getMyActivities() {
-  return get<Result<MyActivityItem[]>>('/activity/my')
+  return get<ActivityRegistration[]>('/activity/my')
 }

@@ -1,246 +1,245 @@
-<template>
-  <div class="notice-list-page">
-    <!-- 搜索栏 -->
-    <el-card shadow="never" class="filter-bar">
-      <div class="filter-form">
-        <el-select
-          v-model="query.type"
-          placeholder="全部类型"
-          clearable
-          class="filter-select"
-          @change="handleSearch"
-        >
-          <el-option label="学校公告" value="SCHOOL" />
-          <el-option label="院系公告" value="DEPT" />
-        </el-select>
-        <el-input
-          v-model="query.department"
-          placeholder="院系名称"
-          clearable
-          class="filter-input"
-          @keyup.enter="handleSearch"
-          @clear="handleSearch"
-        />
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
-      </div>
-    </el-card>
-
-    <!-- 公告列表 -->
-    <div v-loading="loading" class="notice-list">
-      <el-empty v-if="!loading && list.length === 0" description="暂无公告" />
-
-      <div
-        v-for="item in list"
-        :key="item.id"
-        class="notice-item"
-        :class="{ 'is-read': item.isRead }"
-        @click="goToDetail(item.id)"
-      >
-        <div class="notice-left">
-          <span v-if="item.isTop" class="top-badge">置顶</span>
-          <span v-if="!item.isRead" class="unread-dot">●</span>
-          <span class="notice-title">{{ item.title }}</span>
-        </div>
-        <div class="notice-right">
-          <el-tag :type="item.type === 'SCHOOL' ? 'danger' : 'primary'" size="small">
-            {{ item.typeDesc }}
-          </el-tag>
-          <span class="notice-dept">{{ item.department }}</span>
-          <span class="notice-time">{{ formatDateTime(item.createTime) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- 分页 -->
-    <div class="pagination-wrapper">
-      <el-pagination
-        v-model:current-page="query.page"
-        v-model:page-size="query.size"
-        :total="total"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next"
-        background
-        @size-change="fetchList"
-        @current-change="fetchList"
-      />
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
+/**
+ * 通知公告列表页（功能 4）。
+ *
+ * 对应后端 GET /api/notice/list（分页参数 page/size）。
+ * 顶部显示未读数（登录后才有），可按类型筛选。
+ */
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { getNoticeList } from '@/api/notice'
-import type { NoticeItem } from '@/api/types'
-import { formatDateTime } from '@/utils/format'
+import { NOTICE_TYPES, getUnreadCount, pageNotices } from '@/api/notice'
+import type { NoticeItem } from '@/api/notice'
+import { formatDateTime, summary } from '@/utils/format'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const loading = ref(false)
 const list = ref<NoticeItem[]>([])
 const total = ref(0)
+const unread = ref(0)
 
-const query = reactive({
-  type: '' as '' | 'SCHOOL' | 'DEPT',
-  department: '',
-  page: 1,
-  size: 10,
-})
+const query = reactive({ type: '', department: '', page: 1, size: 10 })
 
 async function fetchList() {
   loading.value = true
   try {
-    const res = await getNoticeList({
-      type: query.type || undefined,
-      department: query.department || undefined,
-      page: query.page,
-      size: query.size,
-    })
-    if (res.code === 200 && res.data) {
-      list.value = res.data.list || []
-      total.value = res.data.total || 0
-    }
+    const page = await pageNotices(query)
+    list.value = page.list
+    total.value = page.total
   } finally {
     loading.value = false
   }
 }
 
-function handleSearch() {
+async function fetchUnread() {
+  if (!userStore.isLoggedIn) return
+  try {
+    unread.value = (await getUnreadCount()).count
+  } catch {
+    // 未读数拿不到不影响列表展示，忽略
+  }
+}
+
+function handleFilter() {
   query.page = 1
   fetchList()
 }
 
-function goToDetail(id: number) {
+function goDetail(id: number) {
   router.push(`/notice/${id}`)
 }
 
-onMounted(fetchList)
+onMounted(() => {
+  fetchList()
+  fetchUnread()
+})
 </script>
 
+<template>
+  <div>
+    <!-- hero：与资讯页同一套梦幻语言，用玫瑰色区分模块 -->
+    <section class="notice-hero">
+      <span class="hero-eyebrow">NOTICE CENTER · 通知公告</span>
+      <h1>重要的事情，<em>一条不落</em></h1>
+      <p>
+        学校与院系的官方通知
+        <template v-if="userStore.isLoggedIn && unread > 0"> · 你还有 {{ unread }} 条未读</template>
+      </p>
+    </section>
+
+    <el-card shadow="never" class="toolbar-card">
+      <div class="toolbar">
+        <span class="page-title">全部公告</span>
+        <el-select v-model="query.type" placeholder="全部类型" clearable class="type-select" @change="handleFilter">
+          <el-option v-for="t in NOTICE_TYPES" :key="t.code" :label="t.name" :value="t.code" />
+        </el-select>
+      </div>
+    </el-card>
+
+    <div v-loading="loading" class="notice-list">
+      <el-empty v-if="!loading && list.length === 0" description="暂无公告" />
+      <el-card
+        v-for="item in list"
+        :key="item.id"
+        shadow="never"
+        class="notice-card"
+        :class="item.type === 'SCHOOL' ? 'is-school' : 'is-dept'"
+        @click="goDetail(item.id)"
+      >
+        <div class="notice-head">
+          <span class="notice-title">{{ item.title }}</span>
+          <span class="notice-chip" :class="item.type === 'SCHOOL' ? 'rose' : 'teal'">
+            {{ item.type === 'SCHOOL' ? '学校' : '院系' }}
+          </span>
+        </div>
+        <p class="notice-summary">{{ summary(item.content) }}</p>
+        <div class="notice-meta">
+          <span>{{ item.department || '学校办公室' }}</span>
+          <span>{{ formatDateTime(item.createTime) }}</span>
+        </div>
+      </el-card>
+    </div>
+
+    <div class="pagination-row">
+      <el-pagination
+        v-model:current-page="query.page"
+        v-model:page-size="query.size"
+        :total="total"
+        :page-sizes="[10, 20, 50]"
+        layout="total, prev, pager, next, sizes"
+        background
+        @current-change="fetchList"
+        @size-change="handleFilter"
+      />
+    </div>
+  </div>
+</template>
+
 <style scoped>
-.notice-list-page {
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 20px;
+.notice-hero {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 16px;
+  padding: 34px 36px 30px;
+  border-radius: 18px;
+  color: #fff;
+  background: linear-gradient(120deg, #7a2f57 0%, #b8496d 55%, #e08ba0 100%);
+  box-shadow: 0 16px 40px #b8496d33;
 }
 
-.filter-bar {
+.notice-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(#ffffff59 0 1.4px, transparent 2.2px), radial-gradient(#ffe9ad4d 0 1px, transparent 1.8px);
+  background-size: 180px 130px, 240px 170px;
+}
+
+.hero-eyebrow {
+  color: #ffd98a;
+  font: 700 11px monospace;
+  letter-spacing: 3px;
+}
+
+.notice-hero h1 {
+  margin: 10px 0 8px;
+  font: 700 30px/1.35 Georgia, "STSong", serif;
+}
+
+.notice-hero h1 em {
+  color: #ffd98a;
+  font-style: normal;
+}
+
+.notice-hero p {
+  margin: 0;
+  color: #ffffffb3;
+  font-size: 13px;
+}
+
+.toolbar-card {
   margin-bottom: 16px;
 }
 
-.filter-form {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.filter-select {
-  width: 160px;
-}
-
-.filter-input {
-  width: 220px;
-}
-
-.notice-list {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-height: 300px;
-  background: #fff;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.notice-item {
+.toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px;
-  border-bottom: 1px solid #f0f0f0;
+}
+
+.page-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c2350;
+}
+
+.type-select {
+  width: 160px;
+}
+
+.notice-card {
+  margin-bottom: 12px;
   cursor: pointer;
-  transition: background 0.15s;
+  border-left: 4px solid #e2d8f7;
+  transition: transform .18s, box-shadow .18s;
 }
 
-.notice-item:hover {
-  background: #f5f7fa;
+.notice-card.is-school { border-left-color: #e08ba0; }
+.notice-card.is-dept { border-left-color: #7fd0c6; }
+
+.notice-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 14px 34px #b8496d1f;
 }
 
-.notice-item.is-read .notice-title {
-  color: #909399;
-}
-
-.notice-left {
+.notice-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex: 1;
-  min-width: 0;
-}
-
-.top-badge {
-  font-size: 12px;
-  color: #f56c6c;
-  font-weight: 600;
-  flex-shrink: 0;
-}
-
-.unread-dot {
-  color: #409eff;
-  font-size: 10px;
-  flex-shrink: 0;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .notice-title {
-  font-size: 15px;
-  color: #303133;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-size: 16px;
+  font-weight: 600;
+  color: #2c2350;
 }
 
-.notice-right {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.notice-chip {
   flex-shrink: 0;
-  margin-left: 16px;
+  padding: 3px 12px;
+  border-radius: 999px;
+  font-size: 12px;
 }
 
-.notice-dept {
-  color: #606266;
+.notice-chip.rose { color: #b8496d; background: #fde9f0; }
+.notice-chip.teal { color: #1d7a72; background: #e2f6f2; }
+
+.notice-summary {
+  margin: 8px 0;
+  color: #6a628c;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.notice-meta {
+  display: flex;
+  gap: 16px;
+  color: #a89ec9;
   font-size: 13px;
 }
 
-.notice-time {
-  color: #909399;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.pagination-wrapper {
+.pagination-row {
   display: flex;
   justify-content: center;
   margin-top: 16px;
 }
 
 @media (max-width: 640px) {
-  .notice-item {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 6px;
-  }
-  .notice-right {
-    margin-left: 0;
-    flex-wrap: wrap;
-  }
-  .filter-form {
-    flex-direction: column;
-  }
-  .filter-select,
-  .filter-input {
-    width: 100% !important;
-  }
+  .notice-hero { padding: 24px 20px; }
+  .notice-hero h1 { font-size: 22px; }
 }
 </style>

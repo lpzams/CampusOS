@@ -7,22 +7,24 @@
  */
 import { get } from '@/utils/request'
 
-/** 新闻栏目固定取值（与后端、数据库存的字符串一致） */
-export const NEWS_CATEGORIES = ['校园新闻', '学院动态', '通知公告', '政策文件']
-
 /**
- * 分页查询已发布新闻：GET /api/news
- * @param {{pageNum?:number, pageSize?:number, keyword?:string, category?:string}} query
- * @returns {Promise<{pageNum:number,pageSize:number,total:number,pages:number,list:Array}>}
+ * 分页查询新闻：GET /api/news/list
+ * @param {{page?:number, size?:number, keyword?:string, categoryId?:number|string}} query
+ * @returns {Promise<{total:number,list:Array}>}
  */
 export function pageNews(query) {
-  return get('/news', query)
+  return get('/news/list', query)
 }
 
 /**
- * 新闻详情（后端会自动 +1 浏览量）：GET /api/news/{id}
+ * 新闻详情：GET /api/news/detail/{id}
  * @param {number|string} id
  */
 export function getNewsDetail(id) {
-  return get(`/news/${id}`)
+  return get(`/news/detail/${id}`)
+}
+
+/** 新闻分类：GET /api/news/categories */
+export function getNewsCategories() {
+  return get('/news/categories')
 }

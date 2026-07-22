@@ -1,4 +1,11 @@
 # IDE files
 .idea/
-.claud/
+.claude/
+.m2/
 
+# Maven build output
+**/target/
+
+# Local runtime output
+uploads/
+*.log

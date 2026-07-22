@@ -1,31 +1,24 @@
 server:
-  port: 8081
+  port: 8080
   servlet:
     context-path: /
 
 spring:
-  # ===== 激活 Mock 微信模式（开发测试用，上线前注释掉） =====
-  profiles:
-    active: default
-  servlet:
-    multipart:
-      max-file-size: 10MB      # 单个文件最大大小
-      max-request-size: 10MB   # 总请求最大大小
   application:
     name: campus-portal
-
   # ===== 数据源：改成你自己的库名 / 账号 / 密码 =====
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/campus?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/campus_os?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&useSSL=false&allowPublicKeyRetrieval=true
     username: root
-    password: 123456
+    password: root
   # ===== Redis：项目里认证、缓存会用到，本机默认配置 =====
   data:
     redis:
       host: localhost
       port: 6379
       database: 0
+      # password:   # 有密码再填
 
 # ===== MyBatis-Plus =====
 mybatis-plus:
@@ -45,82 +38,21 @@ mybatis-plus:
       logic-delete-value: 1
       logic-not-delete-value: 0
 
-# ===== JWT =====
-jwt:
-  # 密钥（至少256位），生产环境请更换为更安全的密钥
-  secret: CampusOS-SecretKey-2024-Must-Be-At-Least-256-Bits-Long!!
-  # Token 过期时间（毫秒），默认2小时
-  expiration: 7200000
-
-# ===== 安全配置 =====
-security:
-  # 白名单路径（不需要登录即可访问，支持 Ant 风格通配符）
-  whitelist:
-    - /api/user/login
-    - /api/user/login/sms
-    - /api/user/login/**
-    - /api/user/register
-    - /api/user/sms/send
-    - /api/user/forgot-password
-    - /api/news/list
-    - /api/news/detail/**
-    - /api/news/categories
-    - /api/notice/list
-    - /api/notice/detail/**
-    - /api/course/teacher/**
-    - /api/classroom/all
-    - /api/classroom/all
-    - /api/classroom/free
-    - /api/product/list
-    - /api/product/detail/**
-    - /api/activity/list
-    - /api/activity/detail/**
-    - /api/location/**
-    - /swagger-ui/**
-    - /v3/api-docs/**
-    - /doc.html
-    - /webjars/**
-# ===== 文件上传 =====
-file:
-  upload:
-    # 允许的图片 MIME 类型（逗号分隔）
-    allowed-image-types:
-      - image/jpeg
-      - image/png
-      - image/webp
-    # 图片最大大小：10MB（单位：字节）
-    max-image-size: 10485760
-    # 允许的模块标识
-    allowed-modules:
-      - avatar
-      - news
-      - product
-      - activity
-      - repair
-      - common
-
-# ===== 阿里云 OSS 文件上传 =====
-oss:
-  endpoint: oss-cn-beijing.aliyuncs.com
-  access-key-id: ${OSS_ACCESS_KEY_ID}
-  access-key-secret: ${OSS_ACCESS_KEY_SECRET}
-  bucket-name: hdsx-compus
-
-
-# ===== 微信 =====
-# 测试模式说明：
-#   当 spring.profiles.active 包含 mock-wechat 时，MockWechatApiClient 生效，
-#   直接将请求中的 code 字段作为 openId 使用，无需真实微信API。
-#   上线前移除 mock-wechat profile 即可切换到真实微信API调用。
-wechat:
-  # 小程序/公众号 AppID（生产环境请替换为实际值，mock模式忽略）
-  app-id: wx1234567890
-  # 小程序/公众号 AppSecret（生产环境请替换为实际值，mock模式忽略）
-  app-secret: your_app_secret_here
-  # 类型：miniprogram-小程序 / official-公众号H5
-  type: miniprogram
-
 # ===== 日志 =====
 logging:
   level:
     com.campus: debug
+
+campus:
+  upload-dir: ${CAMPUS_UPLOAD_DIR:uploads}
+  ai:
+    base-url: ${ANTHROPIC_BASE_URL:}
+    api-key: ${ANTHROPIC_AUTH_TOKEN:}
+    model: ${ANTHROPIC_MODEL:claude-opus-4-8}
+  jwt:
+    # 生产环境必须用 CAMPUS_JWT_SECRET 覆盖，至少 32 字节。
+    secret: ${CAMPUS_JWT_SECRET:campus-os-dev-secret-change-me-2026}
+    expiration: 7200000
+  auth:
+    # 仅本地演示返回验证码；生产环境设为 false 并接短信供应商。
+    expose-sms-code: ${CAMPUS_EXPOSE_SMS_CODE:true}
