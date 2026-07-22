@@ -1,184 +1,200 @@
-# CampusOS —— 高校智慧校园门户系统
+# CampusOS
 
-课程实践项目：一套「**Spring Boot 后端 + Vue3 网站 + 微信小程序**」三端同构的校园门户，
-规划 15 个功能模块（见 [项目15个简陋功能.md](./项目15个简陋功能.md)）。
-**校园新闻模块已作为全链路示例实现**，其余模块由团队成员照着它扩展。
+> A modular campus service platform with a Spring Boot API, Vue 3 web console, and uni-app mini-program client.
 
+校园综合服务平台，提供统一的校园业务 API、Web 管理端和微信小程序端。项目采用模块化后端、统一响应模型和 Docker Compose 开发部署，适合作为校园数字化平台的课程实践、原型验证与二次开发基础。
+
+[中文](#中文) · [English](#english) · [快速开始](#快速开始) · [Quick Start](#quick-start)
+
+---
+
+## 中文
+
+### 项目概览
+
+CampusOS 将校园常用服务聚合到同一套业务平台中：
+
+- 账户体系：登录、注册、密码管理、JWT 会话与角色控制
+- 教务服务：课程、选课、课表、成绩、考试与教学管理
+- 校园生活：宿舍、水电、校园卡、缴费、报修与二手交易
+- 校园资讯：新闻、公告、活动与收藏
+- 智能与空间：AI 助手、校园地图、路径规划
+- 数据工具：课程评价爬虫、HAR 分析、MySQL 种子数据导出
+
+Web 端和小程序端通过 REST API 共享业务能力，后端以领域、应用、基础设施和接口层组织代码，便于按模块迭代。
+
+### 技术栈
+
+| 层次 | 技术 |
+| --- | --- |
+| API | Java 17、Spring Boot 3、MyBatis-Plus、Maven |
+| Domain | DDD 分层、领域对象、Repository 抽象 |
+| Web | Vue 3、TypeScript、Vite、Element Plus、Pinia、Vue Router |
+| Mini-program | uni-app、Vue 3、微信开发者工具 |
+| Data | MySQL 8、Redis |
+| Delivery | Docker、Docker Compose、Nginx |
+
+### 仓库结构
+
+```text
+CampusOS/
+├── backend/                 # Spring Boot 多模块后端
+│   ├── campus-api/          # HTTP 接口与应用启动模块
+│   ├── campus-application/  # 用例编排与 DTO
+│   ├── campus-domain/       # 领域模型与仓储接口
+│   ├── campus-infrastructure/# MyBatis-Plus、持久化与外部适配
+│   └── campus-common/       # 通用响应、异常与分页模型
+├── web/                     # Vue 3 + TypeScript Web 端
+├── miniapp/                 # uni-app 微信小程序端
+├── web-crawler/             # 课程评价采集与数据导出工具
+├── docs/sql/                # 数据库初始化、增量脚本与演示数据
+├── 工程文档-项目版/           # 需求、设计、测试与会议文档
+├── docker-compose.yml        # MySQL、Redis、API、Web 一键编排
+└── .env.example              # 环境变量模板（不含真实密钥）
 ```
-             用户
-        Web网站     微信小程序
-          (web/)     (miniapp/)
-             \          /
-              REST API（JSON，统一 Result 结构）
-                   |
-          Spring Boot 后端 (backend/，DDD 洋葱架构)
-                   |
-              MySQL (+ Redis 预留)
-```
 
-## 技术栈
+### 快速开始
 
-| 端 | 技术 | 目录 |
-| --- | --- | --- |
-| 后端 | Java 17 · Spring Boot 3.2 · MyBatis-Plus · MySQL（Maven 多模块，DDD 分层） | [backend/](./backend) |
-| 网站 | Vue 3 · TypeScript · Vite · Element Plus · Pinia · Vue Router | [web/](./web) |
-| 小程序 | uni-app（Vue 3）· 微信小程序 | [miniapp/](./miniapp) |
+#### 方式 A：Docker Compose（推荐）
 
-## 快速开始
-
-> 前置：装好 [Docker Desktop](https://www.docker.com/products/docker-desktop/)。
-> 用「开发模式」另需 JDK 17+、Maven 3.8+、Node 18+；跑小程序需 HBuilderX + 微信开发者工具。
-
-### 方式一：Docker 一键跑全套（汇报演示 / 快速体验）
+要求：Docker Desktop 4.x 或更高版本。
 
 ```bash
+git clone https://github.com/lpzams/CampusOS.git
+cd CampusOS
+copy .env.example .env       # macOS/Linux: cp .env.example .env
 docker compose up -d --build
 ```
 
-首次会拉镜像+下载依赖（几分钟），完成后：
+服务启动后：
 
-| 访问 | 地址 |
+| 服务 | 地址 |
 | --- | --- |
-| 网站 | http://localhost:8081 |
-| 后端接口 | http://localhost:8080/api/news |
-| MySQL / Redis | localhost:3306（root/root）/ localhost:6379 |
+| Web 门户 | http://localhost:8081 |
+| API | http://localhost:8080 |
+| MySQL | localhost:3306 |
+| Redis | localhost:6379 |
 
-数据库首次启动自动执行 `docs/sql/` 全部脚本（建库建表 + 示例数据）。
-首次启动会创建演示管理员 `admin / 123456`；部署前请登录修改密码，并设置
-`CAMPUS_JWT_SECRET` 与 `CAMPUS_EXPOSE_SMS_CODE=false`。
-改了代码想更新容器：还是这一条命令。更多命令见 `docker-compose.yml` 头部注释。
+首次启动会执行 `docs/sql/` 中的数据库脚本。演示环境默认账号为 `admin / 123456`，首次登录后请立即修改密码，并为生产环境设置独立的 JWT 密钥、数据库密码和 AI API Key。
 
-### 方式二：开发模式（平时写代码）
+常用命令：
 
 ```bash
-# 1. Docker 只跑数据库（容器后端/网站不启动，8080 留给 IDEA）
+docker compose logs -f backend
+docker compose ps
+docker compose stop
+docker compose down
+```
+
+#### 方式 B：本地开发
+
+要求：JDK 17+、Maven 3.8+、Node.js 18+、npm 9+；数据库可使用 Docker 启动。
+
+```bash
+# 仅启动基础设施
 docker compose up -d mysql redis
 
-# 2. 后端在 IDEA 里跑 CampusApplication，或命令行：
+# 后端
 cd backend
 mvn spring-boot:run -pl campus-api
-#    验证：浏览器打开 http://localhost:8080/api/news 能看到 JSON
 
-# 3. 网站端热更新开发（默认 5173，/api 由 vite 代理转发到后端）
+# Web（新终端）
 cd web
 npm install
 npm run dev
-
-# 4. 小程序端：用 HBuilderX 导入 miniapp/ 目录，运行到微信开发者工具
-#    详细步骤见 miniapp/README.md
 ```
 
-> 两种方式别同时开：容器后端和 IDEA 后端都占 8080 端口，会冲突
-> （`docker compose stop backend web` 可只停这两个容器）。
-> 没装 Docker 的同学：本机 MySQL 手动导入 `mysql -uroot -p < docs/sql/001_init.sql` 也行。
+Web 开发服务器默认运行在 `http://localhost:5173`，API 通过 Vite 代理访问后端 `8080` 端口。小程序端请用 HBuilderX 或微信开发者工具导入 `miniapp/`，详细说明见 [miniapp/README.md](./miniapp/README.md)。
 
-## 目录结构
+### 配置与安全
 
-> ★ 标记的文件/目录是加新功能时的「模板」，照抄即可；标了「必改」的是加功能时一定会碰的文件。
-> 更细的分端说明见 [web/README.md](./web/README.md) 和 [miniapp/README.md](./miniapp/README.md)。
+- `.env` 只用于本地配置，已被 `.gitignore` 忽略；提交前请确认没有真实 token、密码或证书。
+- 生产环境必须替换默认数据库密码和 `CAMPUS_JWT_SECRET`。
+- AI 能力通过 `ANTHROPIC_AUTH_TOKEN` 等环境变量注入，未配置时不影响基础校园业务。
+- 演示数据和默认账号仅用于本地开发，不应直接用于生产环境。
 
-```
-CampusOS/
-│
-├── backend/                       # ===== Spring Boot 后端（Maven 多模块，DDD 洋葱架构）=====
-│   ├── pom.xml                    # 父 POM：统一管依赖版本，声明下面五个子模块
-│   ├── Dockerfile                 # 后端镜像：Maven 打包 → JRE 运行（docker compose 用）
-│   ├── docker/                    # 容器构建配套（Maven 阿里云镜像配置）
-│   │
-│   ├── campus-common/             # 〔公共层〕全后端共享的通用代码，不含任何业务
-│   │   └── …/common/
-│   │       ├── api/               #   Result 统一返回 / PageResult 统一分页 / ResultCode 错误码
-│   │       ├── exception/         #   BusinessException：业务可预期错误统一抛它
-│   │       └── query/             #   PageQuery：分页参数基类（pageNum/pageSize）
-│   │
-│   ├── campus-domain/             # 〔领域层·最内层〕纯业务对象，不 import 任何框架
-│   │   └── …/domain/news/         #   News 实体（业务规则写在实体方法里，如 publish()）
-│   │                              #   NewsRepository 仓储接口（实现在 infrastructure）★模板
-│   │
-│   ├── campus-application/        # 〔应用层〕用例编排：一个功能一个 AppService
-│   │   └── …/application/news/    #   NewsAppService（编排+事务）★模板
-│   │       ├── dto/               #   NewsDTO：返回给前端的数据结构
-│   │       ├── command/           #   CreateNewsCommand：写操作入参（@NotBlank 校验写这里）
-│   │       └── query/             #   NewsPageQuery：查询入参（extends PageQuery）
-│   │
-│   ├── campus-infrastructure/     # 〔基础设施层〕数据库落地（MyBatis-Plus）
-│   │   └── …/persistence/news/    #   NewsPO（表 t_news 的映射）/ NewsMapper / NewsConverter（PO↔实体）
-│   │                              #   NewsRepositoryImpl（实现领域层的仓储接口）★模板
-│   │
-│   └── campus-api/                # 〔接口层·最外层〕HTTP 入口 + 装配，唯一可运行的模块
-│       └── src/main/
-│           ├── java/…/api/
-│           │   ├── CampusApplication.java   # 启动类（main 在这，跑后端就是跑它）
-│           │   ├── controller/news/         # NewsController：REST 接口，只转发不写业务 ★模板
-│           │   ├── common/                  # GlobalExceptionHandler：全局异常 → 统一 Result
-│           │   └── config/                  # MybatisPlusConfig 等框架配置
-│           └── resources/application.yml    # 端口 8080、MySQL/Redis 连接（数据库密码改这里）
-│
-├── web/                           # ===== Vue3 网站端（Vite + TypeScript + Element Plus）=====
-│   ├── package.json               # 依赖与脚本：npm run dev（开发）/ npm run build（打包）
-│   ├── vite.config.ts             # @ 别名、Element Plus 按需导入、/api 代理转发到后端 8080
-│   ├── Dockerfile                 # 网站镜像：npm build → nginx 托管（docker compose 用）
-│   ├── docker/nginx.conf          # 容器里的 nginx：SPA 路由回退 + /api 反代给后端
-│   ├── .env.development           # 开发环境变量（API 基础路径 /api，走代理免跨域）
-│   ├── .env.production            # 生产环境变量（上线时改成真实后端地址）
-│   ├── index.html                 # 单页应用入口 HTML
-│   ├── public/                    # 原样拷贝的静态资源（favicon 等）
-│   └── src/
-│       ├── main.ts                # 入口：装配 Pinia / Router / Element Plus
-│       ├── App.vue                # 全站布局：顶栏导航 + 内容区 + 页脚（加导航菜单改这里）
-│       ├── router/index.ts        # 路由表（加页面必改）
-│       ├── api/                   # ★ 所有后端接口调用只写在这里（一个功能一个文件）
-│       │   ├── types.ts           #   Result/PageResult：与后端约定的通用类型
-│       │   └── news.ts            #   新闻模块接口 + 类型 ★模板
-│       ├── utils/
-│       │   ├── request.ts         #   axios 封装：统一拆包 Result、统一错误提示（一般不用动）
-│       │   └── format.ts          #   时间格式化等展示小工具
-│       ├── stores/
-│       │   └── user.ts            #   Pinia 用户状态（登录模块完成后接入真实数据）
-│       └── views/                 # 页面组件，按功能分目录
-│           ├── news/              #   NewsListView 列表（搜索+分页）/ NewsDetailView 详情 ★模板
-│           └── admin/             #   NewsManageView 后台管理（发布/下线/删除）★模板
-│
-├── miniapp/                       # ===== 微信小程序端（uni-app Vue3，HBuilderX 导入即用）=====
-│   ├── main.js                    # 入口（uni-app 固定写法，不用动）
-│   ├── App.vue                    # 应用生命周期 + 全局样式
-│   ├── manifest.json              # 应用配置：appid、微信平台设置（urlCheck 已关）
-│   ├── pages.json                 # 页面注册 + 导航栏样式（加页面必改，漏注册会白屏）
-│   ├── uni.scss                   # 全局 SCSS 变量（改主题色在这里）
-│   ├── api/
-│   │   └── news.js                # 新闻模块接口 ★模板
-│   ├── utils/
-│   │   ├── request.js             # uni.request 封装：拆包 Result、错误 toast（BASE_URL 在这改）
-│   │   └── format.js              # 时间格式化等展示小工具
-│   └── pages/
-│       ├── index/index.vue        # 首页：最新新闻（下拉刷新/上拉加载/栏目筛选）★列表页模板
-│       └── news/detail.vue        # 新闻详情（带参数跳转）★详情页模板
-│
-├── docs/                          # ===== 团队文档 =====
-│   ├── sql/
-│   │   └── 001_init.sql           # 建库 campus_os + t_news + 示例数据；新表按 002_功能.sql 递增追加
-│   ├── 新增功能指南.md             # ★ 加功能 step-by-step：建表 → 后端四层 → 网站端 → 小程序端
-│   └── 贡献指南.md                 # 分支/提交规范、各层职责红线、提 PR 前自检
-│
-├── docker-compose.yml             # ★ 一键全套：MySQL+Redis+后端+网站（docker compose up -d --build）
-├── 工程文档-指导版/                 # 课程要求的工程文档（需求规约、测试计划、答辩 PPT 等）
-├── 项目15个简陋功能.md              # 15 个功能模块的需求描述（做什么以这份为准）
-├── .gitignore                     # 忽略 node_modules/target/unpackage 等生成物
-└── README.md                      # 本文件
+### 测试与质量检查
+
+```bash
+# Web 类型检查与生产构建
+cd web
+npm run build
+
+# 小程序工具函数测试
+cd miniapp
+node --test tests/*.test.mjs
+
+# 后端编译与测试
+cd backend
+mvn test
 ```
 
-## 功能模块进度
+### 文档与贡献
 
-| # | 模块 | 状态 |
-| --- | --- | --- |
-| 3 | 校园新闻资讯 | ✅ 全链路示例（后端 + 网站浏览/管理 + 小程序浏览） |
-| 1 | 用户登录与统一认证 | ⬜ 待认领（后端已预留 JWT 依赖、前端已预留 token 位置） |
-| 2 | 个人信息中心 | ⬜ 待认领 |
-| 4 | 校园公告通知 | ⬜ 待认领（与新闻最像，适合第一个动手） |
-| 5-15 | 课程/成绩/考试/缴费/校园卡/宿舍/报修/二手/活动/地图/AI 助手 | ⬜ 待认领 |
+- [新增功能指南](./docs/新增功能指南.md)
+- [贡献指南](./docs/贡献指南.md)
+- [数据库脚本说明](./docs/sql/README.md)
+- [项目接口文档](./接口文档.md)
 
-## 团队开发怎么开始
+欢迎通过 Issue 或 Pull Request 提交问题和改进建议。新增功能请保持后端、Web、小程序和数据库变更的一致性，并避免提交构建产物、依赖目录和本地配置。
 
-1. 读 [docs/贡献指南.md](./docs/贡献指南.md)：分支怎么拉、提交怎么写；
-2. 认领一个模块，照 [docs/新增功能指南.md](./docs/新增功能指南.md) 从建表一路做到小程序；
-3. 卡住时看 news 模块对应文件 —— 每个文件头部的注释都写了"新增功能时怎么抄"。
+### 许可证
+
+当前仓库未声明正式开源许可证。除非获得项目维护者明确授权，请勿将代码用于商业分发。
+
+---
+
+## English
+
+### Overview
+
+CampusOS is a modular campus service platform that brings common university workflows into one system. It ships with a Spring Boot API, a Vue 3 web console, and a uni-app mini-program client.
+
+Core capabilities include authentication and role control, teaching services, grades and exams, campus news and notices, activities, dormitory and card services, payments, repairs, second-hand trading, maps, an AI assistant, and crawler/data-export utilities.
+
+The Web and mini-program clients share the same REST API. The backend follows a domain/application/infrastructure/API structure so features can evolve independently without duplicating business rules.
+
+### Stack
+
+- **Backend:** Java 17, Spring Boot 3, MyBatis-Plus, Maven, DDD-style layering
+- **Web:** Vue 3, TypeScript, Vite, Element Plus, Pinia, Vue Router
+- **Mini-program:** uni-app, Vue 3, WeChat Developer Tools
+- **Infrastructure:** MySQL 8, Redis, Docker Compose, Nginx
+- **Data tooling:** Python crawler scripts, HAR analysis, MySQL seed export
+
+### Quick Start
+
+Requirements: Docker Desktop 4.x or later.
+
+```bash
+git clone https://github.com/lpzams/CampusOS.git
+cd CampusOS
+cp .env.example .env
+docker compose up -d --build
+```
+
+Open `http://localhost:8081` for the Web portal and `http://localhost:8080` for the API. MySQL is exposed on `3306` and Redis on `6379`.
+
+The first startup applies SQL files under `docs/sql/`. The demo account is `admin / 123456`; change it immediately after login and configure production secrets before deployment.
+
+For local development, start MySQL and Redis with Docker, run `mvn spring-boot:run -pl campus-api` from `backend/`, then run `npm install && npm run dev` from `web/`. Import `miniapp/` with HBuilderX or the WeChat Developer Tools for mini-program development.
+
+### Configuration and Security
+
+Keep real credentials in `.env` or your deployment secret manager. Never commit API keys, passwords, certificates, or generated build output. Replace the demo database password and `CAMPUS_JWT_SECRET` before production use. The AI assistant is optional and is configured through environment variables such as `ANTHROPIC_AUTH_TOKEN`.
+
+### Documentation
+
+- [Feature development guide](./docs/新增功能指南.md)
+- [Contribution guide](./docs/贡献指南.md)
+- [Database scripts](./docs/sql/README.md)
+- [API documentation](./接口文档.md)
+
+### Contributing
+
+Issues and pull requests are welcome. Keep backend, Web, mini-program, and database changes consistent, add a focused test for non-trivial behavior, and leave local configuration and generated artifacts out of commits.
+
+### License
+
+No formal open-source license has been declared for this repository. Do not redistribute the code commercially without explicit permission from the maintainers.
+
